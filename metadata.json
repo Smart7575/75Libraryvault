@@ -1,0 +1,6 @@
+{
+  "name": "75LibraryVault",
+  "description": "Een moderne, persoonlijke digitale boekenbibliotheek met automatische metadata-ophaling (Google Books, Open Library) en rijke visuele overzichten zoals Grid View, List View en Series Wall. Beheer je collectie met iTunes-achtige elegantie.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
