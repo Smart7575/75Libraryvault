@@ -15,7 +15,8 @@ import {
   Smartphone,
   BookOpen,
   Check,
-  Send
+  Send,
+  ArrowUpCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Book, bookService } from '../../services/bookService';
@@ -27,6 +28,7 @@ import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import EditBookModal from './EditBookModal';
 import ShareBookModal from './ShareBookModal';
+import PushBookModal from './PushBookModal';
 
 interface BookDetailProps {
   book: Book;
@@ -39,6 +41,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isPushModalOpen, setIsPushModalOpen] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -240,8 +243,19 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                       "p-3 border transition-all",
                       isDarkMode ? "border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-400" : "border-editorial-border text-editorial-text/30 hover:text-editorial-text hover:border-editorial-text"
                     )}
+                    title="Bewerken"
                   >
                     <Edit3 size={20} />
+                  </button>
+                  <button 
+                    onClick={() => setIsPushModalOpen(true)}
+                    className={cn(
+                      "p-3 border transition-all",
+                      isDarkMode ? "border-zinc-800 text-zinc-500 hover:text-editorial-accent-bright hover:border-editorial-accent-bright" : "border-editorial-border text-editorial-text/30 hover:text-editorial-accent hover:border-editorial-accent"
+                    )}
+                    title="Push naar volger"
+                  >
+                    <ArrowUpCircle size={20} />
                   </button>
                   <button 
                     onClick={handleDelete}
@@ -250,6 +264,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                       "p-3 border transition-all",
                       isDarkMode ? "border-zinc-800 text-zinc-500 hover:text-red-500 hover:border-red-500" : "border-editorial-border text-editorial-text/30 hover:text-red-600 hover:border-red-600"
                     )}
+                    title="Verwijderen"
                   >
                     <Trash2 size={20} />
                   </button>
@@ -412,6 +427,15 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
           book={book}
           isOpen={isShareModalOpen}
           onClose={() => setIsShareModalOpen(false)}
+          isDarkMode={isDarkMode}
+        />
+      )}
+
+      {isPushModalOpen && (
+        <PushBookModal 
+          book={book}
+          isOpen={isPushModalOpen}
+          onClose={() => setIsPushModalOpen(false)}
           isDarkMode={isDarkMode}
         />
       )}

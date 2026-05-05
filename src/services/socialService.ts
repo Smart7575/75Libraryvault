@@ -50,6 +50,8 @@ export interface Message {
   bookId?: string;
   bookTitle?: string;
   storageUrl?: string;
+  type?: string;
+  bookDataSnippet?: any;
 }
 
 export const socialService = {
@@ -211,13 +213,13 @@ export const socialService = {
   },
 
   // --- Messaging ---
-  async sendMessage(senderId: string, receiverId: string, text: string, bookData?: { bookId: string, bookTitle: string, storageUrl: string }) {
+  async sendMessage(senderId: string, receiverId: string, text: string, extraData?: Partial<Message>) {
     try {
       await addDoc(collection(db, 'messages'), {
         senderId,
         receiverId,
         text,
-        ...(bookData || {}),
+        ...(extraData || {}),
         createdAt: serverTimestamp()
       });
     } catch (error) {

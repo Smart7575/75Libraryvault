@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Message, socialService } from '../../services/socialService';
 import { UserProfile, userService } from '../../services/userService';
+import { bookService } from '../../services/bookService';
 import { auth } from '../../lib/firebase';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -31,6 +32,7 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
   const [newMessage, setNewMessage] = useState('');
   const [contactList, setContactList] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [acceptedMessages, setAcceptedMessages] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -219,7 +221,82 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
                           : (isDarkMode ? "bg-zinc-800 text-white border-zinc-700" : "bg-white text-editorial-text border-editorial-border")
                       )}>
                         <span>{m.text}</span>
-                        {m.storageUrl && (
+                        {m.type === 'BOOK_PUSH' && m.bookDataSnippet && (
+                          <div className={cn(
+                            "mt-2 p-4 border flex flex-col gap-4 shadow-md",
+                            isOwn 
+                              ? (isDarkMode ? "bg-zinc-900/50 border-zinc-900/20" : "bg-white/10 border-white/20") 
+                              : (isDarkMode ? "bg-zinc-950/50 border-zinc-900" : "bg-neutral-50 border-editorial-border")
+                          )}>
+                            <div className="flex gap-3">
+                               {m.bookDataSnippet.coverUrl ? (
+                                 <img src={m.bookDataSnippet.coverUrl} className="w-16 h-20 object-cover shadow-sm border border-black/5" referrerPolicy="no-referrer" alt="" />
+                               ) : (
+                                 <div className="w-16 h-20 bg-black/5 flex items-center justify-center italic text-lg font-serif">?</div>
+                               )}
+                               <div className="flex-1 min-w-0">
+                                  <p className={cn("text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1", isDarkMode ? "text-white" : "")}>Gepusht boek</p>
+                                  <p className="font-serif italic font-black text-sm leading-tight line-clamp-2 mb-1">{m.bookTitle}</p>
+                                  <p className="text-[10px] italic opacity-60">{m.bookDataSnippet.authors?.join(', ')}</p>
+                               </div>
+                            </div>
+                            
+                            <div className="flex flex-col gap-2">
+                              {m.storageUrl && (
+                                <a 
+                                  href={m.storageUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={cn(
+                                    "flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-all border",
+                                    isOwn 
+                                      ? (isDarkMode ? "bg-zinc-900/50 border-zinc-700 text-white hover:bg-black" : "bg-white/50 border-white/50 text-editorial-text hover:bg-neutral-100") 
+                                      : (isDarkMode ? "bg-zinc-900 border-zinc-800 text-white hover:bg-black" : "bg-white border-editorial-border text-editorial-text hover:bg-neutral-100")
+                                  )}
+                                >
+                                  <ExternalLink size={12} />
+                                  Kijk Locatie
+                                </a>
+                              )}
+                              
+                              {!isOwn && (
+                                <button
+                                  onClick={async () => {
+                                    if (acceptedMessages[m.id || '']) return;
+                                    try {
+                                      await bookService.addSharedBook(m.bookDataSnippet, m.storageUrl);
+                                      if (m.id) {
+                                        setAcceptedMessages(prev => ({ ...prev, [m.id!]: true }));
+                                      }
+                                    } catch (err) {
+                                      console.error('Accept book error:', err);
+                                    }
+                                  }}
+                                  disabled={acceptedMessages[m.id || '']}
+                                  className={cn(
+                                    "flex items-center justify-center gap-2 px-3 py-3 text-[10px] font-bold uppercase tracking-widest transition-all",
+                                    acceptedMessages[m.id || '']
+                                      ? "bg-green-100 text-green-700 cursor-default"
+                                      : (isDarkMode ? "bg-editorial-accent-bright text-zinc-900 hover:bg-white" : "bg-editorial-accent text-white hover:bg-neutral-800")
+                                  )}
+                                >
+                                  {acceptedMessages[m.id || ''] ? (
+                                    <>
+                                      <Check size={12} />
+                                      Toegevoegd
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check size={12} />
+                                      Accepteren
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {m.storageUrl && m.type !== 'BOOK_PUSH' && (
                           <div className={cn(
                             "mt-2 p-3 border flex flex-col gap-2",
                             isOwn 

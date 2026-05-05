@@ -161,6 +161,8 @@ export default function App() {
       console.error('Google Auth error:', error);
       if (error.code === 'auth/popup-blocked') {
         setLoginError('Pop-up geblokkeerd door je browser. Sta pop-ups toe voor deze site.');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        setLoginError('Het inlogvenster werd gesloten voordat het inloggen was voltooid. Probeer het opnieuw en laat het venster openstaan. Op een iPad helpt het vaak om "Blokkeer pop-ups" uit te zetten in de Safari-instellingen.');
       } else if (error.code === 'auth/unauthorized-domain') {
         setLoginError('Domein niet geautoriseerd in Firebase Console. Voeg ais-dev en ais-pre toe aan Geautoriseerde Domeinen.');
       } else if (error.code === 'auth/operation-not-allowed') {

@@ -193,5 +193,29 @@ export const bookService = {
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, COLLECTION_NAME);
     }
+  },
+
+  async addSharedBook(bookSnippet: any, sharedStorageUrl?: string) {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      // Ensure storageUrl is preserved if it exists in the snippet or passed separately
+      const effectiveStorageUrl = sharedStorageUrl || bookSnippet?.storageUrl || '';
+      
+      const newBook = {
+        ...bookSnippet,
+        userId: user.uid,
+        storageUrl: effectiveStorageUrl,
+        readingStatus: 'Wil ik lezen' as const,
+        dateAdded: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+
+      const docRef = await addDoc(collection(db, COLLECTION_NAME), newBook);
+      return docRef.id;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, COLLECTION_NAME);
+    }
   }
 };
