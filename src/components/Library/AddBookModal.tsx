@@ -9,9 +9,10 @@ interface AddBookModalProps {
   isOpen: boolean;
   onClose: () => void;
   onBookAdded: () => void;
+  isDarkMode?: boolean;
 }
 
-export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookModalProps) {
+export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode }: AddBookModalProps) {
   const [step, setStep] = useState<'search' | 'form'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ExternalBook[]>([]);
@@ -132,40 +133,49 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className={cn("fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm", isDarkMode ? "bg-black/60" : "bg-black/40")}>
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
-        className="bg-white w-full max-w-2xl rounded-none shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-editorial-border"
+        className={cn(
+          "w-full max-w-2xl rounded-none shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border",
+          isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-editorial-border"
+        )}
       >
-        <div className="p-6 border-b border-editorial-border flex items-center justify-between bg-white text-editorial-text">
+        <div className={cn("p-6 border-b flex items-center justify-between transition-colors", isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border text-editorial-text")}>
           <h2 className="text-xl font-serif italic tracking-tight font-bold">Nieuw Boek Toevoegen</h2>
           <button onClick={onClose} className="p-2 hover:text-editorial-accent transition-colors">
             <X size={20} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-10 bg-editorial-bg/30">
+        <div className={cn("flex-1 overflow-y-auto p-10 transition-colors", isDarkMode ? "bg-zinc-950" : "bg-editorial-bg/30")}>
           {step === 'search' ? (
             <div className="space-y-10">
               <div className="text-center max-w-md mx-auto">
-                <p className="text-editorial-text/50 mb-8 font-serif italic">Zoek een boek om metadata automatisch op te halen.</p>
+                <p className={cn("mb-8 font-serif italic", isDarkMode ? "text-zinc-600" : "text-editorial-text/50")}>Zoek een boek om metadata automatisch op te halen.</p>
                 <form onSubmit={handleSearch} className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-editorial-text/30" size={18} />
+                  <Search className={cn("absolute left-4 top-1/2 -translate-y-1/2", isDarkMode ? "text-zinc-800" : "text-editorial-text/30")} size={18} />
                   <input 
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Titel, auteur of ISBN..."
-                    className="w-full pl-12 pr-28 py-4 rounded-none border border-editorial-border focus:border-editorial-text focus:outline-none transition-all text-base bg-white"
+                    className={cn(
+                      "w-full pl-12 pr-28 py-4 rounded-none border focus:outline-none transition-all text-base",
+                      isDarkMode ? "bg-zinc-900 border-zinc-800 text-white focus:border-editorial-accent placeholder:text-zinc-800" : "bg-white border-editorial-border focus:border-editorial-text"
+                    )}
                     autoFocus
                   />
                   <button 
                     disabled={isSearching}
-                    className="absolute right-1 top-1 bottom-1 bg-editorial-text text-white px-6 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-800 disabled:bg-neutral-200 transition-colors"
+                    className={cn(
+                      "absolute right-1 top-1 bottom-1 px-6 rounded-none text-[10px] font-bold uppercase tracking-widest transition-colors",
+                      isDarkMode ? "bg-white text-zinc-950 hover:bg-neutral-200 disabled:bg-zinc-800" : "bg-editorial-text text-white hover:bg-neutral-800 disabled:bg-neutral-200"
+                    )}
                   >
-                    {isSearching ? <Loader2 size={16} className="animate-spin text-white" /> : "Zoek"}
+                    {isSearching ? <Loader2 size={16} className="animate-spin" /> : "Zoek"}
                   </button>
                 </form>
               </div>
@@ -175,11 +185,14 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                   <button 
                     key={idx}
                     onClick={() => selectBook(result)}
-                    className="w-full text-left p-4 rounded-none border border-editorial-border bg-white hover:border-editorial-text transition-all flex items-center gap-6 group"
+                    className={cn(
+                      "w-full text-left p-4 rounded-none border transition-all flex items-center gap-6 group",
+                      isDarkMode ? "border-zinc-800 bg-zinc-900 hover:border-editorial-accent" : "border-editorial-border bg-white hover:border-editorial-text"
+                    )}
                   >
-                    <div className="w-16 h-24 bg-neutral-100 rounded-none overflow-hidden shadow-sm flex-shrink-0 border border-black/5">
+                    <div className={cn("w-16 h-24 rounded-none overflow-hidden shadow-sm flex-shrink-0 border", isDarkMode ? "border-zinc-800 bg-black" : "bg-neutral-100 border-black/5")}>
                       {result.coverUrl ? (
-                         <img src={result.coverUrl} alt={result.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                         <img src={result.coverUrl} alt={result.title} className={cn("w-full h-full object-cover", isDarkMode ? "opacity-70" : "")} referrerPolicy="no-referrer" />
                       ) : (
                          <div className="w-full h-full flex items-center justify-center text-neutral-300">
                            <BookIcon size={20} />
@@ -187,25 +200,25 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-xs uppercase tracking-tight group-hover:text-editorial-accent transition-colors truncate">{result.title}</h4>
-                      <p className="text-xs italic text-editorial-text/50 mt-1">{result.authors.join(', ')}</p>
+                      <h4 className={cn("font-bold text-xs uppercase tracking-tight group-hover:text-editorial-accent transition-colors truncate", isDarkMode ? "text-zinc-200" : "text-black")}>{result.title}</h4>
+                      <p className={cn("text-xs italic mt-1", isDarkMode ? "text-zinc-600" : "text-editorial-text/50")}>{result.authors.join(', ')}</p>
                       <div className="mt-3 flex items-center gap-4">
-                         <span className="text-[9px] font-bold uppercase tracking-widest text-editorial-text/30 flex items-center gap-1.5 italic">
+                         <span className={cn("text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/30")}>
                            <Globe size={10} /> {result.source}
                          </span>
                          {result.publishedDate && (
-                           <span className="text-[9px] font-bold uppercase tracking-widest text-editorial-text/30 italic">
+                           <span className={cn("text-[9px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/30")}>
                              {result.publishedDate.split('-')[0]}
                            </span>
                          )}
                       </div>
                     </div>
-                    <ChevronRight size={18} className="text-neutral-200 group-hover:text-editorial-text transition-colors" />
+                    <ChevronRight size={18} className={cn("transition-colors", isDarkMode ? "text-zinc-800 group-hover:text-zinc-500" : "text-neutral-200 group-hover:text-editorial-text")} />
                   </button>
                 ))}
 
                 {searchQuery && !isSearching && searchResults.length === 0 && (
-                   <div className="text-center py-12 border border-dashed border-editorial-border font-serif italic text-editorial-text/40">
+                   <div className={cn("text-center py-12 border border-dashed font-serif italic", isDarkMode ? "border-zinc-800 text-zinc-800" : "border-editorial-border text-editorial-text/40")}>
                      Geen resultaten voor "{searchQuery}".
                    </div>
                 )}
@@ -213,7 +226,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                 <div className="pt-6 text-center">
                   <button 
                     onClick={skipSearch}
-                    className="text-[10px] font-bold uppercase tracking-[0.2em] text-editorial-text/40 hover:text-editorial-accent transition-colors italic"
+                    className={cn("text-[10px] font-bold uppercase tracking-[0.2em] transition-colors italic", isDarkMode ? "text-zinc-800 hover:text-zinc-600" : "text-editorial-text/40 hover:text-editorial-accent")}
                   >
                     Handmatig invoeren →
                   </button>
@@ -224,9 +237,9 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
             <form onSubmit={handleSubmit} className="space-y-10">
               <div className="grid grid-cols-12 gap-10">
                  <div className="col-span-4 space-y-4">
-                    <div className="aspect-[2/3] bg-neutral-100 rounded-none border border-editorial-border overflow-hidden relative shadow-md">
+                    <div className={cn("aspect-[2/3] rounded-none border overflow-hidden relative shadow-md", isDarkMode ? "bg-black border-zinc-800" : "bg-neutral-100 border-editorial-border")}>
                       {formData.coverUrl ? (
-                        <img src={formData.coverUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img src={formData.coverUrl} alt="Preview" className={cn("w-full h-full object-cover", isDarkMode ? "opacity-70" : "")} referrerPolicy="no-referrer" />
                       ) : (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-neutral-300 p-6 text-center">
                            <BookIcon size={32} className="mb-2 opacity-20" />
@@ -235,12 +248,15 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                       )}
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.2em] px-1 italic">Cover URL</label>
+                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Cover URL</label>
                       <input 
                         type="text" 
                         value={formData.coverUrl}
                         onChange={(e) => setFormData({...formData, coverUrl: e.target.value})}
-                        className="w-full px-3 py-2 rounded-none border border-editorial-border text-[10px] focus:outline-none focus:border-editorial-text bg-white"
+                        className={cn(
+                          "w-full px-3 py-2 rounded-none border text-[10px] focus:outline-none focus:border-editorial-accent transition-colors",
+                          isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-editorial-text"
+                        )}
                         placeholder="https://..."
                       />
                     </div>
@@ -249,44 +265,56 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                  <div className="col-span-8 space-y-8">
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.2em] px-1 italic">Titel *</label>
+                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Titel *</label>
                         <input 
                           required
                           type="text" 
                           value={formData.title}
                           onChange={(e) => setFormData({...formData, title: e.target.value})}
-                          className="w-full px-4 py-3 rounded-none border border-editorial-border focus:outline-none focus:border-editorial-text bg-white text-base font-serif italic"
+                          className={cn(
+                            "w-full px-4 py-3 rounded-none border focus:outline-none focus:border-editorial-accent transition-colors text-base font-serif italic",
+                            isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-editorial-text"
+                          )}
                           placeholder="Project Hail Mary"
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.2em] px-1 italic">Auteurs *</label>
+                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Auteurs *</label>
                         <input 
                           required
                           type="text" 
                           value={authorsInput}
                           onChange={(e) => setAuthorsInput(e.target.value)}
-                          className="w-full px-4 py-3 rounded-none border border-editorial-border focus:outline-none focus:border-editorial-text bg-white text-sm"
+                          className={cn(
+                            "w-full px-4 py-3 rounded-none border focus:outline-none focus:border-editorial-accent transition-colors text-sm",
+                            isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-editorial-text"
+                          )}
                           placeholder="Bijv. Andy Weir"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.2em] px-1 italic">Serie</label>
+                          <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Serie</label>
                           <input 
                             type="text" 
                             value={formData.series || ''}
                             onChange={(e) => setFormData({...formData, series: e.target.value})}
-                            className="w-full px-4 py-3 rounded-none border border-editorial-border focus:outline-none focus:border-editorial-text bg-white text-xs"
+                            className={cn(
+                              "w-full px-4 py-3 rounded-none border focus:outline-none focus:border-editorial-accent transition-colors text-xs",
+                              isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-editorial-text"
+                            )}
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.2em] px-1 italic">Deel #</label>
+                          <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Deel #</label>
                           <input 
                             type="number" 
                             value={formData.seriesIndex || ''}
                             onChange={(e) => setFormData({...formData, seriesIndex: parseInt(e.target.value)})}
-                            className="w-full px-4 py-3 rounded-none border border-editorial-border focus:outline-none focus:border-editorial-text bg-white text-xs"
+                            className={cn(
+                              "w-full px-4 py-3 rounded-none border focus:outline-none focus:border-editorial-accent transition-colors text-xs",
+                              isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-editorial-text"
+                            )}
                           />
                         </div>
                       </div>
@@ -294,25 +322,31 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                  </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-12 pt-8 border-t border-editorial-border">
+              <div className={cn("grid grid-cols-2 gap-12 pt-8 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
                 <div className="space-y-6">
                   <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">Bibliografisch</h5>
                   <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.15em] px-1 italic">ISBN</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>ISBN</label>
                     <input 
                       type="text" 
                       value={formData.isbn || ''}
                       onChange={(e) => setFormData({...formData, isbn: e.target.value})}
-                      className="w-full px-4 py-2 rounded-none border border-editorial-border text-xs focus:outline-none focus:border-editorial-text bg-white"
+                      className={cn(
+                        "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent transition-colors",
+                        isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
+                      )}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.15em] px-1 italic">Genre</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Genre</label>
                     <input 
                       type="text" 
                       value={genresInput}
                       onChange={(e) => setGenresInput(e.target.value)}
-                      className="w-full px-4 py-2 rounded-none border border-editorial-border text-xs focus:outline-none focus:border-editorial-text bg-white"
+                      className={cn(
+                        "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent transition-colors",
+                        isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
+                      )}
                     />
                   </div>
                 </div>
@@ -321,11 +355,14 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                   <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">Status & Omvang</h5>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.15em] px-1 italic">Status</label>
+                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Status</label>
                       <select 
                         value={formData.readingStatus}
                         onChange={(e) => setFormData({...formData, readingStatus: e.target.value as any})}
-                        className="w-full px-4 py-2 rounded-none border border-editorial-border text-xs focus:outline-none focus:border-editorial-text bg-white appearance-none cursor-pointer"
+                        className={cn(
+                          "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent appearance-none cursor-pointer transition-colors",
+                          isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
+                        )}
                       >
                         <option>Ongelezen</option>
                         <option>Bezig</option>
@@ -334,18 +371,21 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.15em] px-1 italic">Pagina's</label>
+                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Pagina's</label>
                       <input 
                         type="number" 
                         value={formData.pageCount || ''}
                         onChange={(e) => setFormData({...formData, pageCount: parseInt(e.target.value)})}
-                        className="w-full px-4 py-2 rounded-none border border-editorial-border text-xs focus:outline-none focus:border-editorial-text bg-white"
+                        className={cn(
+                          "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent transition-colors",
+                          isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border"
+                        )}
                         placeholder="bijv. 350"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.15em] px-1 italic">Mijn Waardering</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Mijn Waardering</label>
                     <div className="flex gap-2">
                        {[1, 2, 3, 4, 5].map(star => (
                          <button 
@@ -354,7 +394,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                            onClick={() => setFormData({...formData, rating: star})}
                            className={cn(
                              "text-lg transition-colors",
-                             (formData.rating || 0) >= star ? "text-editorial-accent" : "text-neutral-200 hover:text-neutral-400"
+                             (formData.rating || 0) >= star ? "text-editorial-accent" : (isDarkMode ? "text-zinc-800 hover:text-zinc-700" : "text-neutral-200 hover:text-neutral-400")
                            )}
                          >
                            ★
@@ -365,15 +405,18 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                 </div>
               </div>
 
-              <div className="space-y-6 pt-8 border-t border-editorial-border">
+              <div className={cn("space-y-6 pt-8 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
                 <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">Bestand & Opslag</h5>
                 <div className="grid grid-cols-12 gap-6">
                   <div className="col-span-3 space-y-2">
-                    <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.15em] px-1 italic flex items-center gap-2"><FileType size={10} /> Formaat</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic flex items-center gap-2", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}><FileType size={10} /> Formaat</label>
                     <select 
                       value={formData.format}
                       onChange={(e) => setFormData({...formData, format: e.target.value})}
-                      className="w-full px-4 py-2 rounded-none border border-editorial-border text-xs focus:outline-none focus:border-editorial-text bg-white appearance-none cursor-pointer"
+                      className={cn(
+                        "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent appearance-none cursor-pointer transition-colors",
+                        isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
+                      )}
                     >
                       <option>epub</option>
                       <option>pdf</option>
@@ -383,12 +426,15 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
                     </select>
                   </div>
                   <div className="col-span-9 space-y-2">
-                    <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.15em] px-1 italic flex items-center gap-2"><Link size={10} /> Opslaglink</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic flex items-center gap-2", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}><Link size={10} /> Opslaglink</label>
                     <input 
                       type="text" 
                       value={formData.storageUrl || ''}
                       onChange={(e) => setFormData({...formData, storageUrl: e.target.value})}
-                      className="w-full px-4 py-2 rounded-none border border-editorial-border text-xs focus:outline-none focus:border-editorial-text bg-white"
+                      className={cn(
+                        "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent transition-colors",
+                        isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border"
+                      )}
                       placeholder="https://nas.local/e-books/..."
                     />
                   </div>
@@ -396,26 +442,29 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
               </div>
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-none text-xs font-bold uppercase tracking-widest mb-6 italic">
+                  <div className={cn("px-4 py-3 border text-xs font-bold uppercase tracking-widest mb-6 italic", isDarkMode ? "bg-red-950/20 border-red-900 text-red-500" : "bg-red-50 border-red-200 text-red-700")}>
                     {error}
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-10 border-t border-editorial-border bg-transparent pb-4">
+                <div className={cn("flex items-center justify-between pt-10 border-t bg-transparent pb-4", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
                   <button 
                     type="button" 
                     disabled={isSubmitting}
                     onClick={() => setStep('search')}
-                    className="text-[10px] font-bold uppercase tracking-[0.15em] text-editorial-text/40 hover:text-editorial-text transition-colors italic disabled:opacity-50"
+                    className={cn("text-[10px] font-bold uppercase tracking-[0.15em] transition-colors italic disabled:opacity-50", isDarkMode ? "text-zinc-800 hover:text-zinc-600" : "text-editorial-text/40 hover:text-editorial-text")}
                   >
                     ← Metadata Zoeken
                   </button>
                   <button 
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-editorial-text text-white px-10 py-4 rounded-none text-[10px] font-bold uppercase tracking-[0.25em] hover:bg-neutral-800 transition-colors shadow-lg disabled:bg-neutral-400 flex items-center gap-3"
+                    className={cn(
+                      "px-10 py-4 rounded-none text-[10px] font-bold uppercase tracking-[0.25em] transition-colors shadow-lg disabled:bg-neutral-400 flex items-center gap-3",
+                      isDarkMode ? "bg-white text-zinc-900 hover:bg-neutral-200" : "bg-editorial-text text-white hover:bg-neutral-800"
+                    )}
                   >
-                    {isSubmitting && <Loader2 size={14} className="animate-spin" />}
+                    {isSubmitting && <Loader2 size={14} className="animate-spin text-white" />}
                     {isSubmitting ? "Bezig..." : "Boek Toevoegen"}
                   </button>
                 </div>

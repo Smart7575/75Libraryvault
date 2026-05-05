@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Library, Plus, BarChart3, Settings, Search, Grid2X2, List, BookMarked, LogOut, Moon, Sun, User as UserIcon, Users, ChevronRight, TrendingUp, BookOpen, Filter, MessageSquare, Globe, Shield, ShieldAlert } from 'lucide-react';
+import { Library, Plus, BarChart3, Settings, Search, Grid2X2, List, BookMarked, LogOut, Moon, Sun, User as UserIcon, Users, ChevronRight, TrendingUp, BookOpen, Filter, MessageSquare, Globe, Shield, ShieldAlert, Star } from 'lucide-react';
 import { auth, db, googleProvider } from './lib/firebase';
 import { 
   signInWithEmailAndPassword,
@@ -289,11 +289,15 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginView onAuth={handleLogin} onGoogleAuth={handleGoogleLogin} error={loginError} isLoggingIn={isLoggingIn} />;
+    return <LoginView onAuth={handleLogin} onGoogleAuth={handleGoogleLogin} error={loginError} isLoggingIn={isLoggingIn} isDarkMode={isDarkMode} />;
   }
 
   return (
-    <div className={cn("min-h-screen flex transition-colors duration-300 font-sans", isDarkMode ? "bg-zinc-950 text-white" : "bg-editorial-bg text-editorial-text")}>
+    <div className={cn(
+      "min-h-screen flex transition-colors duration-300 font-sans selection:bg-editorial-accent/30", 
+      isDarkMode && "dark",
+      isDarkMode ? "bg-zinc-950 text-neutral-100" : "bg-editorial-bg text-editorial-text"
+    )}>
       <AnimatePresence>
         {isAddModalOpen && (
           <AddBookModal 
@@ -307,6 +311,7 @@ export default function App() {
             book={selectedBook} 
             onClose={() => setSelectedBook(null)}
             onUpdate={fetchBooks}
+            isDarkMode={isDarkMode}
           />
         )}
       </AnimatePresence>
@@ -317,81 +322,90 @@ export default function App() {
         isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-editorial-bg border-editorial-border"
       )}>
         <div className="mb-6">
-          <h1 className="text-2xl font-serif italic tracking-tight flex items-center gap-2 text-editorial-accent">
-            <div className="w-2 h-8 bg-editorial-accent"></div>
+          <h1 className={cn("text-2xl font-serif italic tracking-tight flex items-center gap-2", isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent")}>
+            <div className={cn("w-2 h-8", isDarkMode ? "bg-editorial-accent-bright" : "bg-editorial-accent")}></div>
             LibraryVault
           </h1>
         </div>
 
         <div className="flex-1 space-y-4">
           <section>
-            <p className="text-[10px] uppercase tracking-widest text-black/40 font-bold mb-2 italic">Sociaal</p>
+            <p className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40 font-bold mb-2 italic">Sociaal</p>
             <div className="space-y-0.5">
               <NavItem 
                 icon={<Globe size={16} />} 
                 label="Overzicht" 
                 active={viewMode === 'feed'} 
                 onClick={() => setViewMode('feed')} 
+                isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<MessageSquare size={16} />} 
                 label="Berichten" 
                 active={viewMode === 'messages'} 
                 onClick={() => setViewMode('messages')} 
+                isDarkMode={isDarkMode}
               />
             </div>
           </section>
 
           <section>
-            <p className="text-[10px] uppercase tracking-widest text-black/40 font-bold mb-2 italic">Collectie</p>
+            <p className={cn("text-[10px] uppercase tracking-widest font-bold mb-2 italic", isDarkMode ? "text-white/40" : "text-black/40")}>Collectie</p>
             <div className="space-y-0.5">
               <NavItem 
                 icon={<Grid2X2 size={16} />} 
                 label="Bibliotheek" 
                 active={viewMode === 'grid' || viewMode === 'list'} 
                 onClick={() => setViewMode('grid')} 
+                isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<BookMarked size={16} />} 
                 label="Series Wall" 
                 active={viewMode === 'series'} 
                 onClick={() => setViewMode('series')} 
+                isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<Users size={16} />} 
                 label="Auteurs" 
                 active={viewMode === 'authors'} 
                 onClick={() => setViewMode('authors')} 
+                isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<Filter size={16} />} 
                 label="Genres" 
                 active={viewMode === 'genres'} 
                 onClick={() => setViewMode('genres')} 
+                isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<BarChart3 size={16} />} 
                 label="Statistieken" 
                 active={viewMode === 'stats'} 
                 onClick={() => setViewMode('stats')} 
+                isDarkMode={isDarkMode}
               />
             </div>
           </section>
 
           <section>
-            <p className="text-[10px] uppercase tracking-widest text-black/40 font-bold mb-2 italic">Systeem</p>
+            <p className={cn("text-[10px] uppercase tracking-widest font-bold mb-2 italic", isDarkMode ? "text-white/40" : "text-black/40")}>Systeem</p>
             <div className="space-y-0.5">
               <NavItem 
                 icon={<UserIcon size={16} />} 
                 label="Mijn Profiel" 
                 active={viewMode === 'profile'} 
                 onClick={() => setViewMode('profile')} 
+                isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<Settings size={16} />} 
                 label="Instellingen" 
                 active={viewMode === 'settings'} 
                 onClick={() => setViewMode('settings')} 
+                isDarkMode={isDarkMode}
               />
               {userService.isAdmin(user?.email) && (
                 <NavItem 
@@ -399,6 +413,7 @@ export default function App() {
                   label="Administrator" 
                   active={viewMode === 'admin'} 
                   onClick={() => setViewMode('admin')} 
+                  isDarkMode={isDarkMode}
                 />
               )}
             </div>
@@ -436,40 +451,71 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 ml-64 flex flex-col min-h-screen">
-        <header className="h-20 border-b border-editorial-border flex items-center justify-between px-6 md:px-10 bg-white/30 backdrop-blur-md sticky top-0 z-10 gap-6">
+        <header className={cn(
+          "h-20 border-b flex items-center justify-between px-6 md:px-10 backdrop-blur-md sticky top-0 z-10 gap-6 transition-colors",
+          isDarkMode ? "bg-zinc-950/70 border-zinc-800" : "bg-white/70 border-editorial-border"
+        )}>
           <div className="flex items-center gap-4 flex-shrink-0">
-            <div className="flex border border-editorial-border divide-x divide-editorial-border">
+            <div className={cn(
+              "flex border divide-x",
+              isDarkMode ? "border-zinc-800 divide-zinc-800" : "border-editorial-border divide-editorial-border"
+            )}>
               <button 
                 onClick={() => setViewMode('grid')}
-                className={cn("px-4 py-1.5 transition-colors", viewMode === 'grid' ? "bg-editorial-text text-white" : "hover:bg-black/5")}
+                className={cn(
+                  "px-4 py-1.5 transition-colors", 
+                  viewMode === 'grid' 
+                    ? (isDarkMode ? "bg-zinc-100 text-zinc-900" : "bg-editorial-text text-white") 
+                    : (isDarkMode ? "hover:bg-white/5 text-zinc-400" : "hover:bg-black/5 text-editorial-text/60")
+                )}
                 title="Grid"
               >
                 <Grid2X2 size={14} />
               </button>
               <button 
                 onClick={() => setViewMode('list')}
-                className={cn("px-4 py-1.5 transition-colors", viewMode === 'list' ? "bg-editorial-text text-white" : "hover:bg-black/5")}
+                className={cn(
+                  "px-4 py-1.5 transition-colors", 
+                  viewMode === 'list' 
+                    ? (isDarkMode ? "bg-zinc-100 text-zinc-900" : "bg-editorial-text text-white") 
+                    : (isDarkMode ? "hover:bg-white/5 text-zinc-400" : "hover:bg-black/5 text-editorial-text/60")
+                )}
                 title="Lijst"
               >
                 <List size={14} />
               </button>
               <button 
                 onClick={() => setViewMode('series')}
-                className={cn("px-4 py-1.5 transition-colors", viewMode === 'series' ? "bg-editorial-text text-white" : "hover:bg-black/5")}
+                className={cn(
+                  "px-4 py-1.5 transition-colors", 
+                  viewMode === 'series' 
+                    ? (isDarkMode ? "bg-zinc-100 text-zinc-900" : "bg-editorial-text text-white") 
+                    : (isDarkMode ? "hover:bg-white/5 text-zinc-400" : "hover:bg-black/5 text-editorial-text/60")
+                )}
                 title="Series Wall"
               >
                 <BookMarked size={14} />
               </button>
               <button 
                 onClick={() => setViewMode('authors')}
-                className={cn("px-4 py-1.5 transition-colors", viewMode === 'authors' ? "bg-editorial-text text-white" : "hover:bg-black/5")}
+                className={cn(
+                  "px-4 py-1.5 transition-colors", 
+                  viewMode === 'authors' 
+                    ? (isDarkMode ? "bg-zinc-100 text-zinc-900" : "bg-editorial-text text-white") 
+                    : (isDarkMode ? "hover:bg-white/5 text-zinc-400" : "hover:bg-black/5 text-editorial-text/60")
+                )}
                 title="Auteurs"
               >
                 <Users size={14} />
               </button>
               <button 
                 onClick={() => setViewMode('genres')}
-                className={cn("px-4 py-1.5 transition-colors", viewMode === 'genres' ? "bg-editorial-text text-white" : "hover:bg-black/5")}
+                className={cn(
+                  "px-4 py-1.5 transition-colors", 
+                  viewMode === 'genres' 
+                    ? (isDarkMode ? "bg-zinc-100 text-zinc-900" : "bg-editorial-text text-white") 
+                    : (isDarkMode ? "hover:bg-white/5 text-zinc-400" : "hover:bg-black/5 text-editorial-text/60")
+                )}
                 title="Genres"
               >
                 <Filter size={14} />
@@ -478,14 +524,15 @@ export default function App() {
           </div>
 
           <div className="flex-1 flex items-center min-w-0">
-            <Search className="text-editorial-text/30 mr-3 flex-shrink-0" size={16} />
+            <Search className={cn("mr-3 flex-shrink-0", isDarkMode ? "text-white" : "text-editorial-text/30")} size={16} />
             <input 
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Zoek..." 
               className={cn(
-                "bg-transparent border-none text-sm w-full max-w-[240px] focus:outline-none focus:ring-0 placeholder-black/30 font-medium"
+                "bg-transparent border-none text-sm w-full max-w-[240px] focus:outline-none focus:ring-0 font-medium",
+                isDarkMode ? "placeholder-white text-white" : "placeholder-black/30 text-editorial-text"
               )}
             />
           </div>
@@ -493,8 +540,8 @@ export default function App() {
           <div className="flex items-center gap-4 md:gap-8 flex-shrink-0">
             
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider opacity-40">Totaal:</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider">{books.length}</span>
+              <span className={cn("text-[10px] font-bold uppercase tracking-wider", isDarkMode ? "text-white" : "opacity-40")}>Totaal:</span>
+              <span className={cn("text-[10px] font-bold uppercase tracking-wider", isDarkMode ? "text-white" : "")}>{books.length}</span>
             </div>
           </div>
         </header>
@@ -510,6 +557,7 @@ export default function App() {
                 setChatWithUser(u);
                 setViewMode('messages');
               }}
+              isDarkMode={isDarkMode}
             />
           ) : viewMode === 'user-profile' && selectedSocialUser ? (
             <UserProfileDetail 
@@ -519,18 +567,20 @@ export default function App() {
                 setChatWithUser(u);
                 setViewMode('messages');
               }}
+              isDarkMode={isDarkMode}
             />
           ) : viewMode === 'messages' ? (
             <Messages 
               initialChatUser={chatWithUser} 
               onBack={() => setViewMode('feed')} 
+              isDarkMode={isDarkMode}
             />
           ) : viewMode === 'stats' ? (
-            <Stats books={books} />
+            <Stats books={books} isDarkMode={isDarkMode} />
           ) : viewMode === 'profile' ? (
-            <ProfileView user={user} books={books} />
+            <ProfileView user={user} books={books} isDarkMode={isDarkMode} />
           ) : viewMode === 'admin' ? (
-            <AdminDashboard />
+            <AdminDashboard isDarkMode={isDarkMode} />
           ) : viewMode === 'settings' ? (
             <SettingsView 
               isDarkMode={isDarkMode} 
@@ -551,29 +601,35 @@ export default function App() {
                     {viewMode === 'profile' && "Mijn Profiel"}
                   </h2>
                   {searchQuery && (
-                    <span className="text-lg font-serif italic text-black/40 hidden md:inline">voor "{searchQuery}"</span>
+                    <span className={cn("text-lg font-serif italic hidden md:inline", isDarkMode ? "text-white" : "text-black/40")}>voor "{searchQuery}"</span>
                   )}
                 </div>
               </div>
 
               <div className="grid gap-8">
                 {filteredBooks.length === 0 ? (
-                  <div className="h-96 flex flex-col items-center justify-center border border-editorial-border rounded-none text-zinc-300">
-                    <BookOpen size={48} className="mb-4 opacity-5" />
-                    <p className="font-serif italic text-xl mb-1 text-black/40">Niets gevonden</p>
+                  <div className={cn(
+                    "h-96 flex flex-col items-center justify-center border rounded-none",
+                    isDarkMode ? "border-zinc-800 text-white/20" : "border-editorial-border text-zinc-300"
+                  )}>
+                    <BookOpen size={48} className="mb-4 opacity-50" />
+                    <p className={cn(
+                      "font-serif italic text-xl mb-1",
+                      isDarkMode ? "text-white/40" : "text-black/40"
+                    )}>Niets gevonden</p>
                   </div>
                 ) : viewMode === 'series' ? (
                   <div className="space-y-16">
                      {(Object.entries(seriesGroups) as [string, Book[]][]).map(([name, seriesBooks]) => (
                        <div key={name} className="space-y-6">
-                          <div className="flex items-baseline gap-4 border-b border-editorial-border pb-2">
+                          <div className="flex items-baseline gap-4 border-b border-editorial-border dark:border-zinc-800 pb-2">
                             <h2 className="text-3xl font-serif font-bold tracking-tight">{name}</h2>
-                            <span className="text-black/40 font-serif italic text-sm">{seriesBooks.length} delen</span>
+                            <span className={cn("font-serif italic text-sm", isDarkMode ? "text-white" : "text-black/40")}>{seriesBooks.length} delen</span>
                           </div>
                           <div className="flex gap-8 overflow-x-auto pb-6 scrollbar-hide">
                              {seriesBooks.map(book => (
                                <div key={book.id} style={{ minWidth: coverWidth, maxWidth: coverWidth }}>
-                                 <BookItem book={book} mode="grid" onClick={() => setSelectedBook(book)} coverWidth={coverWidth} />
+                                 <BookItem book={book} mode="grid" onClick={() => setSelectedBook(book)} coverWidth={coverWidth} isDarkMode={isDarkMode} />
                                </div>
                              ))}
                           </div>
@@ -584,14 +640,14 @@ export default function App() {
                   <div className="space-y-16">
                      {(Object.entries(authorGroups) as [string, Book[]][]).map(([name, authorBooks]) => (
                        <div key={name} className="space-y-6">
-                          <div className="flex items-baseline gap-4 border-b border-editorial-border pb-2">
+                          <div className="flex items-baseline gap-4 border-b border-editorial-border dark:border-zinc-800 pb-2">
                             <h2 className="text-3xl font-serif font-bold tracking-tight">{name}</h2>
-                            <span className="text-black/40 font-serif italic text-sm">{authorBooks.length} boeken</span>
+                            <span className={cn("font-serif italic text-sm", isDarkMode ? "text-white" : "text-black/40")}>{authorBooks.length} boeken</span>
                           </div>
                           <div className="flex gap-8 overflow-x-auto pb-6 scrollbar-hide">
                              {authorBooks.map(book => (
                                <div key={book.id} style={{ minWidth: coverWidth, maxWidth: coverWidth }}>
-                                 <BookItem book={book} mode="grid" onClick={() => setSelectedBook(book)} coverWidth={coverWidth} />
+                                 <BookItem book={book} mode="grid" onClick={() => setSelectedBook(book)} coverWidth={coverWidth} isDarkMode={isDarkMode} />
                                </div>
                              ))}
                           </div>
@@ -602,14 +658,14 @@ export default function App() {
                   <div className="space-y-16">
                      {(Object.entries(genreGroups) as [string, Book[]][]).map(([name, genreBooks]) => (
                        <div key={name} className="space-y-6">
-                          <div className="flex items-baseline gap-4 border-b border-editorial-border pb-2">
+                          <div className="flex items-baseline gap-4 border-b border-editorial-border dark:border-zinc-800 pb-2">
                             <h2 className="text-3xl font-serif font-bold tracking-tight">{name}</h2>
-                            <span className="text-black/40 font-serif italic text-sm">{genreBooks.length} boeken</span>
+                            <span className={cn("font-serif italic text-sm", isDarkMode ? "text-white" : "text-black/40")}>{genreBooks.length} boeken</span>
                           </div>
                           <div className="flex gap-8 overflow-x-auto pb-6 scrollbar-hide">
                              {genreBooks.map(book => (
                                <div key={book.id} style={{ minWidth: coverWidth, maxWidth: coverWidth }}>
-                                 <BookItem book={book} mode="grid" onClick={() => setSelectedBook(book)} coverWidth={coverWidth} />
+                                 <BookItem book={book} mode="grid" onClick={() => setSelectedBook(book)} coverWidth={coverWidth} isDarkMode={isDarkMode} />
                                </div>
                              ))}
                           </div>
@@ -632,6 +688,7 @@ export default function App() {
                           mode={viewMode as 'grid'|'list'} 
                           onClick={() => setSelectedBook(book)}
                           coverWidth={coverWidth}
+                          isDarkMode={isDarkMode}
                         />
                       </div>
                     ))}
@@ -642,13 +699,19 @@ export default function App() {
           )}
         </div>
 
-        <footer className="h-12 border-t border-editorial-border bg-white flex items-center justify-between px-10 text-[10px] font-bold uppercase tracking-[0.15em] text-black/40">
+        <footer className={cn(
+          "h-12 border-t flex items-center justify-between px-10 text-[10px] font-bold uppercase tracking-[0.15em]",
+          isDarkMode ? "bg-zinc-900 border-zinc-800 text-white/40" : "bg-white border-editorial-border text-black/40"
+        )}>
            <div className="flex gap-10">
-              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-editorial-accent"></div> {books.length} Boeken</span>
+              <span className="flex items-center gap-2">
+                <div className={cn("w-1.5 h-1.5 rounded-full", isDarkMode ? "bg-editorial-accent-bright" : "bg-editorial-accent")}></div> 
+                {books.length} Boeken
+              </span>
               <span>{books.filter(b => b.readingStatus === 'Gelezen').length} Gelezen</span>
            </div>
            <div className="flex gap-6">
-             <span className="text-editorial-accent">Status: Online</span>
+             <span className={isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent"}>Status: Online</span>
              <span>MEI 2026</span>
            </div>
         </footer>
@@ -657,13 +720,15 @@ export default function App() {
   );
 }
 
-function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
+function NavItem({ icon, label, active, onClick, isDarkMode }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void, isDarkMode?: boolean }) {
   return (
     <button 
       onClick={onClick}
       className={cn(
         "w-full flex items-center gap-3 px-0 py-1.5 transition-all duration-200 group text-left",
-        active ? "text-editorial-accent" : "text-black/50 hover:text-black"
+        active 
+          ? (isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent") 
+          : (isDarkMode ? "text-white/60 hover:text-white" : "text-black/50 hover:text-black")
       )}
     >
       <span className={cn("transition-all duration-300 text-[10px]", active ? "opacity-100" : "opacity-0 group-hover:opacity-40")}>
@@ -673,7 +738,7 @@ function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode, labe
       {active && (
         <motion.div 
           layoutId="sidebar-dot"
-          className="ml-auto w-1 h-1 bg-editorial-accent rounded-full"
+          className={cn("ml-auto w-1 h-1 rounded-full", isDarkMode ? "bg-editorial-accent-bright" : "bg-editorial-accent")}
         />
       )}
     </button>
@@ -695,36 +760,54 @@ function ViewToggle({ active, onClick, icon, label }: { active: boolean, onClick
   );
 }
 
-function BookItem({ book, mode, onClick, coverWidth }: { book: Book, mode: 'grid' | 'list', onClick: () => void, coverWidth?: number, key?: React.Key }) {
+function BookItem({ book, mode, onClick, coverWidth, isDarkMode }: { book: Book, mode: 'grid' | 'list', onClick: () => void, coverWidth?: number, isDarkMode?: boolean, key?: React.Key }) {
   if (mode === 'list') {
     return (
       <div 
         onClick={onClick}
-        className="py-6 border-b border-editorial-border flex items-center gap-8 hover:bg-neutral-50/50 transition-all group cursor-pointer px-4"
+        className={cn(
+          "py-6 border-b flex items-center gap-8 transition-all group cursor-pointer px-4",
+          isDarkMode ? "border-zinc-800 hover:bg-white/5" : "border-editorial-border hover:bg-neutral-50/50"
+        )}
       >
         <div className="flex-1 min-w-0">
-          <h4 className="font-bold text-sm uppercase tracking-tight group-hover:text-editorial-accent transition-colors">{book.title}</h4>
-          <p className="text-xs italic text-black/50 mt-1">{book.authors.join(', ')}</p>
+          <h4 className={cn("font-bold text-sm uppercase tracking-tight transition-colors", isDarkMode ? "group-hover:text-editorial-accent-bright" : "group-hover:text-editorial-accent")}>{book.title}</h4>
+          <p className={cn("text-xs italic mt-1", isDarkMode ? "text-white" : "text-black/50")}>{book.authors.join(', ')}</p>
         </div>
         
-        <div className="flex items-center gap-12 text-[10px] font-bold uppercase tracking-widest text-black/40">
+        <div className={cn(
+          "flex items-center gap-12 text-[10px] font-bold uppercase tracking-widest",
+          isDarkMode ? "text-white" : "text-black/40"
+        )}>
           <span className="w-24 truncate italic opacity-60">{book.genre[0] || '-'}</span>
           <span className="w-40">{book.series ? `${book.series} #${book.seriesIndex}` : '-'}</span>
-          <div className="w-24 flex text-editorial-accent">
-             {'★'.repeat(Math.round(book.rating || 0)) + '☆'.repeat(5 - Math.round(book.rating || 0))}
+          <div className={cn("w-24 flex gap-0.5 items-center", isDarkMode ? "text-white" : "text-editorial-accent")}>
+             {[1, 2, 3, 4, 5].map((s) => {
+               const isFilled = s <= Math.round(book.rating || 0);
+               return (
+                 <Star 
+                   key={s} 
+                   size={10} 
+                   strokeWidth={isFilled ? 1.5 : 2}
+                   className={cn(
+                     isFilled ? (isDarkMode ? "fill-editorial-accent-bright" : "fill-current") : "fill-transparent"
+                   )} 
+                 />
+               );
+             })}
           </div>
           <span className={cn(
             "px-3 py-1 border border-current text-[9px] min-w-[80px] text-center",
-            book.readingStatus === 'Gelezen' ? "text-green-700 bg-green-50/50" :
-            book.readingStatus === 'Bezig' ? "text-blue-700 bg-blue-50/50" :
-            book.readingStatus === 'Wil ik lezen' ? "text-orange-700 bg-orange-50/50" :
-            "text-black/30"
+            book.readingStatus === 'Gelezen' ? (isDarkMode ? "text-green-500 bg-green-500/10" : "text-green-700 bg-green-50/50") :
+            book.readingStatus === 'Bezig' ? (isDarkMode ? "text-blue-500 bg-blue-500/10" : "text-blue-700 bg-blue-50/50") :
+            book.readingStatus === 'Wil ik lezen' ? (isDarkMode ? "text-orange-500 bg-orange-500/10" : "text-orange-700 bg-orange-50/50") :
+            (isDarkMode ? "text-zinc-700 border-zinc-800" : "text-black/30")
           )}>
             {book.readingStatus}
           </span>
         </div>
         
-        <ChevronRight size={14} className="text-black/10 group-hover:text-black transition-all" />
+        <ChevronRight size={14} className={cn("transition-all", isDarkMode ? "text-white/10 group-hover:text-white/60" : "text-black/10 group-hover:text-black")} />
       </div>
     );
   }
@@ -735,11 +818,25 @@ function BookItem({ book, mode, onClick, coverWidth }: { book: Book, mode: 'grid
       onClick={onClick}
       className="group cursor-pointer"
     >
-      <div className="aspect-[2/3] overflow-hidden shadow-xl border border-black/10 relative mb-5 bg-[#d9d5ce] transition-all duration-500 group-hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)]">
+      <div className={cn(
+        "aspect-[2/3] overflow-hidden shadow-xl border relative mb-5 transition-all duration-500 group-hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)]",
+        isDarkMode ? "border-zinc-800 bg-zinc-900" : "border-black/10 bg-[#d9d5ce]"
+      )}>
         {book.coverUrl ? (
-          <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-700" referrerPolicy="no-referrer" />
+          <img 
+            src={book.coverUrl} 
+            alt={book.title} 
+            className={cn(
+              "w-full h-full object-cover transition-all duration-700",
+              isDarkMode ? "opacity-80 group-hover:opacity-100" : "grayscale-[0.2] group-hover:grayscale-0"
+            )} 
+            referrerPolicy="no-referrer" 
+          />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center font-serif italic text-black/20">
+          <div className={cn(
+            "w-full h-full flex flex-col items-center justify-center p-6 text-center font-serif italic",
+            isDarkMode ? "text-zinc-700" : "text-black/20"
+          )}>
              <span className="text-7xl mb-2 opacity-50">{book.title.substring(0, 1)}</span>
              <span className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] line-clamp-3 px-4">{book.title}</span>
           </div>
@@ -757,18 +854,31 @@ function BookItem({ book, mode, onClick, coverWidth }: { book: Book, mode: 'grid
         </div>
       </div>
       <div>
-        <h3 className="font-bold text-sm uppercase leading-tight group-hover:text-editorial-accent transition-colors">{book.title}</h3>
-        <p className="text-xs italic text-black/60 mt-1">{book.authors.join(', ')}</p>
+        <h3 className={cn("font-bold text-sm uppercase leading-tight transition-colors", isDarkMode ? "text-white group-hover:text-editorial-accent-bright" : "group-hover:text-editorial-accent")}>{book.title}</h3>
+        <p className={cn("text-xs italic mt-1", isDarkMode ? "text-white" : "text-black/60")}>{book.authors.join(', ')}</p>
         
         {book.series && (
-          <p className="text-[10px] uppercase font-bold tracking-widest text-black/40 mt-1.5 flex items-center gap-1.5">
+          <p className={cn("text-[10px] uppercase font-bold tracking-widest mt-1.5 flex items-center gap-1.5", isDarkMode ? "text-white" : "text-black/40")}>
             <BookMarked size={10} className="text-editorial-accent" />
-            {book.series} <span className="text-editorial-accent">#{book.seriesIndex}</span>
+            {book.series} <span className={cn(isDarkMode ? "text-white" : "text-editorial-accent")}>#{book.seriesIndex}</span>
           </p>
         )}
 
-        <div className="mt-2 flex text-editorial-accent text-[10px]">
-           {'★'.repeat(Math.round(book.rating || 0))}
+        <div className="mt-2 flex gap-0.5">
+           {[1, 2, 3, 4, 5].map((s) => {
+             const isFilled = s <= Math.round(book.rating || 0);
+             return (
+               <Star 
+                 key={s} 
+                 size={10} 
+                 strokeWidth={isFilled ? 1.5 : 2}
+                 className={cn(
+                   isFilled ? (isDarkMode ? "fill-editorial-accent-bright" : "fill-current") : "fill-transparent",
+                   isDarkMode ? "text-white" : "text-editorial-accent"
+                 )} 
+               />
+             );
+           })}
         </div>
       </div>
     </motion.div>
@@ -791,34 +901,34 @@ function SettingsView({
       <section className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-12">
           <section className="space-y-6">
-            <h3 className="text-xl font-serif italic font-bold border-b border-editorial-border pb-2 text-editorial-accent">Interface</h3>
+            <h3 className={cn("text-xl font-serif italic font-bold border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Interface</h3>
             <div className="flex items-center justify-between">
                <div>
-                 <p className="font-bold uppercase text-xs tracking-widest">Donkere Modus</p>
-                 <p className="text-xs italic text-black/40">Voor nachtelijk lezen</p>
+                 <p className={cn("font-bold uppercase text-xs tracking-widest", isDarkMode ? "text-zinc-200" : "text-black")}>Donkere Modus</p>
+                 <p className={cn("text-xs italic", isDarkMode ? "text-zinc-600" : "text-black/40")}>Voor nachtelijk lezen</p>
                </div>
                <button 
                 onClick={() => setIsDarkMode(!isDarkMode)}
                 className={cn(
-                  "w-12 h-6 border border-editorial-border p-1 transition-colors duration-300",
-                  isDarkMode ? "bg-black" : "bg-transparent"
+                  "w-12 h-6 border p-1 transition-colors duration-300",
+                  isDarkMode ? "bg-white border-white" : "bg-transparent border-editorial-border"
                 )}
                >
                  <div className={cn(
                    "w-4 h-4 transition-transform duration-300",
-                   isDarkMode ? "translate-x-6 bg-white" : "translate-x-0 bg-black"
+                   isDarkMode ? "translate-x-6 bg-black" : "translate-x-0 bg-black"
                  )} />
                </button>
             </div>
           </section>
 
           <section className="space-y-6">
-            <h3 className="text-xl font-serif italic font-bold border-b border-editorial-border pb-2 text-editorial-accent">Weergave</h3>
+            <h3 className={cn("text-xl font-serif italic font-bold border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Weergave</h3>
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between mb-2">
-                  <p className="font-bold uppercase text-xs tracking-widest">Grootte Boekomslag</p>
-                  <span className="text-xs font-mono text-black/40">{coverWidth}px</span>
+                  <p className={cn("font-bold uppercase text-xs tracking-widest", isDarkMode ? "text-zinc-200" : "text-black")}>Grootte Boekomslag</p>
+                  <span className={cn("text-xs font-mono", isDarkMode ? "text-zinc-700" : "text-black/40")}>{coverWidth}px</span>
                 </div>
                 <input 
                   type="range" 
@@ -827,9 +937,9 @@ function SettingsView({
                   step="10"
                   value={coverWidth}
                   onChange={(e) => setCoverWidth(parseInt(e.target.value))}
-                  className="w-full h-1 bg-editorial-border rounded-none appearance-none cursor-pointer accent-editorial-accent"
+                  className={cn("w-full h-1 rounded-none appearance-none cursor-pointer accent-editorial-accent", isDarkMode ? "bg-zinc-800" : "bg-editorial-border")}
                 />
-                <div className="flex justify-between mt-1 text-[8px] font-bold uppercase tracking-widest text-black/30 italic">
+                <div className={cn("flex justify-between mt-1 text-[8px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-zinc-800" : "text-black/30")}>
                   <span>S</span>
                   <span>M</span>
                   <span>L</span>
@@ -840,33 +950,33 @@ function SettingsView({
           </section>
 
           <section className="space-y-6">
-            <h3 className="text-xl font-serif italic font-bold border-b border-editorial-border pb-2 text-editorial-accent">Bibliotheek Data</h3>
+            <h3 className={cn("text-xl font-serif italic font-bold border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Bibliotheek Data</h3>
             <div className="space-y-2">
-               <SettingsButton label="Exporteer Bibliotheek (JSON)" />
-               <SettingsButton label="Exporteer als CSV" />
+               <SettingsButton label="Exporteer Bibliotheek (JSON)" isDarkMode={isDarkMode} />
+               <SettingsButton label="Exporteer als CSV" isDarkMode={isDarkMode} />
             </div>
           </section>
         </div>
 
-        <div className="flex flex-col items-center justify-start pt-12 space-y-4 bg-black/[0.02] border border-editorial-border p-8">
-           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-4 italic">Voorbeeld Weergave</p>
+        <div className={cn("flex flex-col items-center justify-start pt-12 space-y-4 border p-8", isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-black/[0.02] border-editorial-border")}>
+           <p className={cn("text-[10px] font-bold uppercase tracking-[0.2em] mb-4 italic", isDarkMode ? "text-zinc-700" : "text-black/30")}>Voorbeeld Weergave</p>
            <div className="relative group" style={{ width: coverWidth }}>
-             <div className="aspect-[2/3] overflow-hidden shadow-2xl border border-black/10 bg-[#d9d5ce]">
-               <img 
-                 src="https://images.unsplash.com/photo-1543005814-14b24e82ff3e?q=80&w=800&auto=format&fit=crop" 
-                 alt="Preview" 
-                 className="w-full h-full object-cover"
-               />
-               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-4 flex flex-col justify-end">
-                 <div className="h-1 bg-editorial-accent w-full"></div>
-               </div>
-             </div>
-             <div className="mt-4 text-center">
-               <h4 className="font-bold text-xs uppercase tracking-tight">Titel van het Boek</h4>
-               <p className="text-[10px] italic text-black/50">Auteur Naam</p>
-             </div>
+             <div className={cn("aspect-[2/3] overflow-hidden shadow-2xl border", isDarkMode ? "border-zinc-800 bg-zinc-900" : "border-black/10 bg-[#d9d5ce]")}>
+                <img 
+                  src="https://images.unsplash.com/photo-1543005814-14b24e82ff3e?q=80&w=800&auto=format&fit=crop" 
+                  alt="Preview" 
+                  className={cn("w-full h-full object-cover", isDarkMode ? "opacity-70 group-hover:opacity-100" : "")}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-4 flex flex-col justify-end">
+                  <div className="h-1 bg-editorial-accent w-full"></div>
+                </div>
+              </div>
+              <div className="mt-4 text-center">
+                <h4 className={cn("font-bold text-xs uppercase tracking-tight", isDarkMode ? "text-white" : "text-black")}>Titel van het Boek</h4>
+                <p className={cn("text-[10px] italic", isDarkMode ? "text-white" : "text-black/50")}>Auteur Naam</p>
+              </div>
            </div>
-           <p className="text-[10px] italic text-black/30 mt-8 text-center max-w-[200px]">
+           <p className={cn("text-[10px] italic mt-8 text-center max-w-[200px]", isDarkMode ? "text-white" : "text-black/30")}>
              Pas de schuifbalk aan om de ideale grootte voor jouw collectie te vinden.
            </p>
         </div>
@@ -875,16 +985,19 @@ function SettingsView({
   );
 }
 
-function SettingsButton({ label }: { label: string }) {
+function SettingsButton({ label, isDarkMode }: { label: string, isDarkMode?: boolean }) {
   return (
-    <button className="w-full flex items-center justify-between py-4 border-b border-editorial-border hover:bg-black/5 transition-colors px-2 text-left group">
-       <span className="font-bold text-xs uppercase tracking-widest italic group-hover:text-editorial-accent">{label}</span>
-       <ChevronRight size={14} className="text-black/20 group-hover:text-black" />
+    <button className={cn(
+      "w-full flex items-center justify-between py-4 border-b transition-colors px-2 text-left group",
+      isDarkMode ? "border-zinc-800 hover:bg-zinc-800/40" : "border-editorial-border hover:bg-black/5"
+    )}>
+       <span className={cn("font-bold text-xs uppercase tracking-widest italic group-hover:text-editorial-accent", isDarkMode ? "text-zinc-400" : "text-black")}>{label}</span>
+       <ChevronRight size={14} className={isDarkMode ? "text-zinc-700 group-hover:text-zinc-200" : "text-black/20 group-hover:text-black"} />
     </button>
   );
 }
 
-function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn }: { onAuth: (email: string, password: string, isSignUp: boolean) => void, onGoogleAuth: () => void, error: string | null, isLoggingIn: boolean }) {
+function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn, isDarkMode }: { onAuth: (email: string, password: string, isSignUp: boolean) => void, onGoogleAuth: () => void, error: string | null, isLoggingIn: boolean, isDarkMode: boolean }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -896,25 +1009,28 @@ function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn }: { onAuth: (emai
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-editorial-bg overflow-hidden relative font-sans">
+    <div className={cn("h-screen w-full flex items-center justify-center overflow-hidden relative font-sans", isDarkMode ? "bg-zinc-950" : "bg-editorial-bg")}>
       <div className="absolute inset-0 z-0">
-         <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("https://www.transparenttextures.com/patterns/felt.png")` }}></div>
+         <div className={cn("absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none", isDarkMode ? "bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]" : "bg-[url('https://www.transparenttextures.com/patterns/felt.png')]")}></div>
       </div>
       
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 text-center w-full max-w-md px-10 border border-editorial-border py-16 bg-white shadow-2xl"
+        className={cn(
+          "relative z-10 text-center w-full max-w-md px-10 border py-16 shadow-2xl",
+          isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-editorial-border"
+        )}
       >
         <div className="w-16 h-16 bg-editorial-accent flex items-center justify-center text-white mx-auto mb-8 shadow-lg">
           <Library size={28} />
         </div>
         
-        <h1 className="text-5xl font-serif font-black tracking-tighter text-editorial-text mb-4 leading-none italic">
+        <h1 className={cn("text-5xl font-serif font-black tracking-tighter mb-4 leading-none italic", isDarkMode ? "text-white" : "text-editorial-text")}>
           LibraryVault
         </h1>
         
-        <p className="text-editorial-text/60 mb-10 text-sm font-serif italic max-w-xs mx-auto">
+        <p className={cn("mb-10 text-sm font-serif italic max-w-xs mx-auto", isDarkMode ? "text-zinc-600" : "text-editorial-text/60")}>
           {isSignUp ? "Maak een account aan voor je bibliotheek." : "Toegang tot je persoonlijke digitale bibliotheek."}
         </p>
         
@@ -923,7 +1039,10 @@ function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn }: { onAuth: (emai
             type="button"
             onClick={onGoogleAuth}
             disabled={isLoggingIn}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-editorial-border hover:bg-neutral-50 transition-colors rounded-none font-bold text-[10px] uppercase tracking-widest disabled:opacity-50"
+            className={cn(
+              "w-full flex items-center justify-center gap-3 py-3 px-4 border transition-colors rounded-none font-bold text-[10px] uppercase tracking-widest disabled:opacity-50",
+              isDarkMode ? "border-zinc-800 text-zinc-400 hover:bg-zinc-800" : "border-editorial-border hover:bg-neutral-50 text-black"
+            )}
           >
             <svg viewBox="0 0 24 24" className="w-4 h-4">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -935,32 +1054,38 @@ function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn }: { onAuth: (emai
           </button>
           
           <div className="relative">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-editorial-border"></span></div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className="bg-white px-4 text-black/30 font-bold italic">of</span></div>
+            <div className={cn("absolute inset-0 flex items-center", isDarkMode ? "opacity-20" : "")}><span className={cn("w-full border-t", isDarkMode ? "border-zinc-700" : "border-editorial-border")}></span></div>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className={cn("px-4 font-bold italic", isDarkMode ? "bg-zinc-900 text-zinc-700" : "bg-white text-black/30")}>of</span></div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 italic px-1">E-mailadres</label>
+            <label className={cn("text-[10px] font-bold uppercase tracking-widest italic px-1", isDarkMode ? "text-zinc-700" : "text-black/40")}>E-mailadres</label>
             <input 
               required
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-none border border-editorial-border focus:outline-none focus:border-editorial-text bg-white text-sm"
+              className={cn(
+                "w-full px-4 py-3 rounded-none border focus:outline-none focus:border-editorial-accent text-sm transition-colors",
+                isDarkMode ? "bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-editorial-text"
+              )}
               placeholder="naam@voorbeeld.nl"
             />
           </div>
           
           <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-black/40 italic px-1">Wachtwoord</label>
+            <label className={cn("text-[10px] font-bold uppercase tracking-widest italic px-1", isDarkMode ? "text-zinc-700" : "text-black/40")}>Wachtwoord</label>
             <input 
               required
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-none border border-editorial-border focus:outline-none focus:border-editorial-text bg-white text-sm"
+              className={cn(
+                "w-full px-4 py-3 rounded-none border focus:outline-none focus:border-editorial-accent text-sm transition-colors",
+                isDarkMode ? "bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-editorial-text"
+              )}
               placeholder="••••••••"
             />
           </div>
@@ -978,27 +1103,30 @@ function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn }: { onAuth: (emai
           <button 
             disabled={isLoggingIn}
             type="submit"
-            className="w-full bg-editorial-text text-white py-4 rounded-none font-bold text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-neutral-800 transition-all disabled:bg-neutral-400 mt-6 flex items-center justify-center gap-3"
+            className={cn(
+              "w-full py-4 rounded-none font-bold text-[10px] uppercase tracking-[0.2em] shadow-xl transition-all disabled:bg-neutral-400 mt-6 flex items-center justify-center gap-3",
+              isDarkMode ? "bg-white text-zinc-900 hover:bg-zinc-200" : "bg-editorial-text text-white hover:bg-neutral-800 shadow-black/10"
+            )}
           >
-            {isLoggingIn && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
+            {isLoggingIn && <div className={cn("w-4 h-4 border-2 rounded-full animate-spin", isDarkMode ? "border-zinc-900/30 border-t-zinc-900" : "border-white/30 border-t-white")}></div>}
             {isLoggingIn ? "Bezig..." : (isSignUp ? "Registreren" : "Inloggen")}
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-editorial-border">
+        <div className={cn("mt-8 pt-6 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
           <button 
             type="button"
             onClick={() => {
               setIsSignUp(!isSignUp);
             }}
-            className="text-[10px] font-bold uppercase tracking-widest text-editorial-accent hover:underline italic"
+            className={cn("text-[10px] font-bold uppercase tracking-widest hover:underline italic", isDarkMode ? "text-editorial-accent" : "text-editorial-accent")}
           >
             {isSignUp ? "Heb je al een account? Log in" : "Nog geen account? Registreer hier"}
           </button>
         </div>
       </motion.div>
       
-      <div className="absolute bottom-10 left-0 w-full flex items-center justify-center gap-16 opacity-30 pointer-events-none">
+      <div className={cn("absolute bottom-10 left-0 w-full flex items-center justify-center gap-16 pointer-events-none opacity-30", isDarkMode ? "text-zinc-700" : "text-black")}>
          <div className="flex flex-col items-center gap-2">
            <TrendingUp size={16}/>
            <span className="text-[9px] font-bold uppercase tracking-widest italic">Metadata</span>

@@ -47,6 +47,9 @@ export interface Message {
   receiverId: string;
   text: string;
   createdAt: any;
+  bookId?: string;
+  bookTitle?: string;
+  storageUrl?: string;
 }
 
 export const socialService = {
@@ -208,12 +211,13 @@ export const socialService = {
   },
 
   // --- Messaging ---
-  async sendMessage(senderId: string, receiverId: string, text: string) {
+  async sendMessage(senderId: string, receiverId: string, text: string, bookData?: { bookId: string, bookTitle: string, storageUrl: string }) {
     try {
       await addDoc(collection(db, 'messages'), {
         senderId,
         receiverId,
         text,
+        ...(bookData || {}),
         createdAt: serverTimestamp()
       });
     } catch (error) {

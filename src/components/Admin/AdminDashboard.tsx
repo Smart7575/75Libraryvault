@@ -17,7 +17,7 @@ import { auth } from '../../lib/firebase';
 
 const ADMIN_PASSWORD = 'Admin@Library75'; // In a real app, this would be more secure or managed via custom claims
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -86,20 +86,26 @@ export default function AdminDashboard() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white border border-editorial-border p-12 max-w-md w-full shadow-2xl text-center"
+          className={cn(
+            "p-12 max-w-md w-full shadow-2xl text-center border",
+            isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-editorial-border"
+          )}
         >
-          <div className="w-16 h-16 bg-editorial-accent/10 flex items-center justify-center rounded-full mx-auto mb-6">
-            <Lock className="text-editorial-accent" size={32} />
+          <div className={cn("w-16 h-16 flex items-center justify-center rounded-full mx-auto mb-6", isDarkMode ? "bg-zinc-950" : "bg-editorial-accent/10")}>
+            <Lock className={isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent"} size={32} />
           </div>
           <h2 className="text-2xl font-serif font-black uppercase tracking-tight italic mb-8">Admin Toegang</h2>
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2 text-left">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-black/40">Voer wachtwoord in</label>
+              <label className={cn("text-[10px] font-bold uppercase tracking-widest", isDarkMode ? "text-white/40" : "text-black/40")}>Voer wachtwoord in</label>
               <input 
                 type="password" 
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full border border-editorial-border p-4 bg-editorial-bg focus:ring-0 focus:border-editorial-accent outline-none font-mono"
+                className={cn(
+                  "w-full border p-4 focus:ring-0 focus:border-editorial-accent-bright outline-none font-mono transition-colors",
+                  isDarkMode ? "bg-zinc-950 border-zinc-800 text-white placeholder:text-white/20" : "bg-editorial-bg border-editorial-border"
+                )}
                 autoFocus
                 placeholder="••••••••"
               />
@@ -107,7 +113,10 @@ export default function AdminDashboard() {
             {error && <p className="text-red-500 text-xs italic">{error}</p>}
             <button 
               type="submit"
-              className="w-full bg-editorial-accent text-white p-4 text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-800 transition-colors"
+              className={cn(
+                "w-full p-4 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                isDarkMode ? "bg-white text-zinc-900 hover:bg-neutral-200" : "bg-editorial-accent text-white hover:bg-neutral-800"
+              )}
             >
               Ontgrendel Dashboard
             </button>
@@ -119,17 +128,19 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-12">
-      <div className="pb-8 border-b border-editorial-border flex items-center justify-between">
+      <div className={cn("pb-8 border-b flex items-center justify-between", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
         <div>
-          <h2 className="text-4xl font-serif font-black tracking-tight italic">Administrator Dashboard</h2>
-          <p className="text-sm font-serif italic text-black/40">Beheer gebruikers en platformactiviteit</p>
+          <h2 className="text-4xl font-serif font-black tracking-tight italic leading-none">Dashboard</h2>
+          <p className={cn("text-sm font-serif italic mt-1", isDarkMode ? "text-white/40" : "text-black/40")}>Beheer gebruikers en platformactiviteit</p>
         </div>
         <div className="flex gap-4">
           <button 
             onClick={() => setView('users')}
             className={cn(
               "px-6 py-2 text-[10px] font-bold uppercase tracking-widest border transition-all",
-              view === 'users' ? "bg-editorial-text text-white" : "border-editorial-border hover:bg-black/5"
+              view === 'users' 
+                ? (isDarkMode ? "bg-white text-zinc-900 font-black" : "bg-editorial-text text-white") 
+                : (isDarkMode ? "bg-zinc-900 border-zinc-800 text-white/40 hover:text-white" : "border-editorial-border hover:bg-black/5")
             )}
           >
             <Users size={14} className="inline mr-2" /> Gebruikers
@@ -138,7 +149,9 @@ export default function AdminDashboard() {
             onClick={() => setView('activities')}
             className={cn(
               "px-6 py-2 text-[10px] font-bold uppercase tracking-widest border transition-all",
-              view === 'activities' ? "bg-editorial-text text-white" : "border-editorial-border hover:bg-black/5"
+              view === 'activities' 
+                ? (isDarkMode ? "bg-white text-zinc-900 font-black" : "bg-editorial-text text-white") 
+                : (isDarkMode ? "bg-zinc-900 border-zinc-800 text-white/40 hover:text-white" : "border-editorial-border hover:bg-black/5")
             )}
           >
             <ActivityIcon size={14} className="inline mr-2" /> Activiteiten
@@ -146,25 +159,28 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="bg-white border border-editorial-border shadow-sm">
+      <div className={cn("border shadow-sm overflow-hidden", isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-editorial-border")}>
         {loading ? (
           <div className="p-20 text-center italic text-black/30">Laden...</div>
         ) : view === 'users' ? (
-          <div className="divide-y divide-editorial-border">
+          <div className={cn("divide-y", isDarkMode ? "divide-zinc-800" : "divide-editorial-border")}>
             {users.map(u => (
-              <div key={u.uid} className="p-6 flex items-center justify-between hover:bg-neutral-50 transition-colors">
+              <div key={u.uid} className={cn("p-6 flex items-center justify-between transition-colors", isDarkMode ? "hover:bg-zinc-800/50" : "hover:bg-neutral-50")}>
                 <div className="flex items-center gap-4">
-                  <img src={u.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.uid}`} className="w-12 h-12 border border-editorial-border" />
+                  <img src={u.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.uid}`} className={cn("w-12 h-12 border", isDarkMode ? "border-zinc-800" : "border-editorial-border")} />
                   <div>
-                    <h4 className="font-bold uppercase tracking-tight">{u.displayName}</h4>
-                    <p className="text-[10px] text-black/40 font-mono">{u.email}</p>
-                    <p className="text-[10px] text-black/40 italic font-serif">UID: {u.uid}</p>
+                    <h4 className={cn("font-bold uppercase tracking-tight", isDarkMode ? "text-white" : "text-black")}>{u.displayName}</h4>
+                    <p className={cn("text-[10px] font-mono", isDarkMode ? "text-white/40" : "text-black/40")}>{u.email}</p>
+                    <p className={cn("text-[10px] italic font-serif", isDarkMode ? "text-white/20" : "text-black/40")}>UID: {u.uid}</p>
                   </div>
                 </div>
                 {u.email !== auth.currentUser?.email && (
                   <button 
                     onClick={() => handleDeleteUser(u.uid)}
-                    className="p-3 text-black/20 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-200"
+                    className={cn(
+                      "p-3 transition-all border border-transparent hover:border-red-500 hover:text-red-500",
+                      isDarkMode ? "text-white/10" : "text-black/20"
+                    )}
                     title="Verwijder Gebruiker"
                   >
                     <Trash2 size={18} />
@@ -174,27 +190,30 @@ export default function AdminDashboard() {
             ))}
           </div>
         ) : (
-          <div className="divide-y divide-editorial-border">
+          <div className={cn("divide-y", isDarkMode ? "divide-zinc-800" : "divide-editorial-border")}>
             {activities.map(a => (
-              <div key={a.id} className="p-6 flex items-center justify-between hover:bg-neutral-50 transition-colors">
+              <div key={a.id} className={cn("p-6 flex items-center justify-between transition-colors", isDarkMode ? "hover:bg-zinc-800/50" : "hover:bg-neutral-50")}>
                 <div className="flex items-center gap-4">
-                  <div className="w-2 h-2 bg-editorial-accent rounded-full"></div>
+                  <div className={cn("w-2 h-2 rounded-full", isDarkMode ? "bg-editorial-accent-bright" : "bg-editorial-accent")}></div>
                   <div>
                     <p className="text-xs">
-                      <span className="font-bold">{a.userName}</span> 
-                      <span className="mx-2 text-black/40 opacity-50">→</span>
-                      <span className="italic font-serif">{a.type}</span>
-                      <span className="mx-2 text-black/40 opacity-50">→</span>
-                      <span className="font-bold uppercase tracking-tight text-[10px]">{a.bookTitle}</span>
+                      <span className={cn("font-bold", isDarkMode ? "text-white" : "text-editorial-text")}>{a.userName}</span> 
+                      <span className={cn("mx-2 opacity-50", isDarkMode ? "text-white/20" : "text-black/40")}>→</span>
+                      <span className={cn("italic font-serif", isDarkMode ? "text-white/60" : "text-black/40")}>{a.type}</span>
+                      <span className={cn("mx-2 opacity-50", isDarkMode ? "text-white/20" : "text-black/40")}>→</span>
+                      <span className={cn("font-bold uppercase tracking-tight text-[10px]", isDarkMode ? "text-white/80" : "text-editorial-text")}>{a.bookTitle}</span>
                     </p>
-                    <p className="text-[10px] text-black/40 mt-1 uppercase font-bold tracking-widest">
+                    <p className={cn("text-[10px] mt-1 uppercase font-bold tracking-widest", isDarkMode ? "text-white/40" : "text-black/40")}>
                       {a.createdAt?.toDate ? a.createdAt.toDate().toLocaleString() : 'Recent'}
                     </p>
                   </div>
                 </div>
                 <button 
                   onClick={() => a.id && handleDeleteActivity(a.id)}
-                  className="p-3 text-black/20 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-200"
+                  className={cn(
+                    "p-3 transition-all border border-transparent hover:border-red-500 hover:text-red-500",
+                    isDarkMode ? "text-white/10" : "text-black/20"
+                  )}
                   title="Verwijder Activiteit"
                 >
                   <Trash2 size={18} />
@@ -208,11 +227,11 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      <div className="p-6 bg-red-50 border border-red-100 flex items-start gap-4">
+      <div className={cn("p-6 flex items-start gap-4 border", isDarkMode ? "bg-red-950/20 border-red-900/50" : "bg-red-50 border-red-100")}>
         <ShieldAlert className="text-red-500 shrink-0" size={20} />
         <div className="space-y-1">
-          <p className="text-xs font-bold uppercase tracking-widest text-red-900">Pas op: Administratieve Bevoegdheden</p>
-          <p className="text-[10px] leading-relaxed text-red-700 font-serif italic">
+          <p className={cn("text-xs font-bold uppercase tracking-widest", isDarkMode ? "text-red-400" : "text-red-900")}>Pas op: Administratieve Bevoegdheden</p>
+          <p className={cn("text-[10px] leading-relaxed font-serif italic", isDarkMode ? "text-red-400" : "text-red-700")}>
             Als administrator heb je de mogelijkheid om gegevens definitief te verwijderen uit de database. 
             Deze acties zijn onomkeerbaar en hebben direct effect op alle gebruikers.
           </p>

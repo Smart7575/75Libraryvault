@@ -84,12 +84,15 @@
     },
     "Message": {
       "title": "Message",
-      "description": "A chat message between two users.",
+      "description": "A chat message between two users, optionally sharing a book location.",
       "type": "object",
       "properties": {
         "senderId": { "type": "string" },
         "receiverId": { "type": "string" },
         "text": { "type": "string" },
+        "bookId": { "type": "string", "description": "Optional shared book ID" },
+        "bookTitle": { "type": "string", "description": "Optional shared book Title" },
+        "storageUrl": { "type": "string", "description": "Optional shared storage location" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["senderId", "receiverId", "text", "createdAt"]

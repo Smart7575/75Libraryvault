@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   Smartphone,
   BookOpen,
-  Check
+  Check,
+  Send
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Book, bookService } from '../../services/bookService';
@@ -25,16 +26,19 @@ import { cn } from '../../lib/utils';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import EditBookModal from './EditBookModal';
+import ShareBookModal from './ShareBookModal';
 
 interface BookDetailProps {
   book: Book;
   onClose: () => void;
   onUpdate: () => void;
+  isDarkMode?: boolean;
 }
 
-export default function BookDetail({ book, onClose, onUpdate }: BookDetailProps) {
+export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: BookDetailProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -166,65 +170,86 @@ export default function BookDetail({ book, onClose, onUpdate }: BookDetailProps)
       <motion.div 
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white w-full max-w-5xl rounded-none shadow-2xl overflow-hidden flex h-[85vh] max-h-[850px] border border-editorial-border"
+        className={cn(
+          "w-full max-w-5xl rounded-none shadow-2xl overflow-hidden flex h-[85vh] max-h-[850px] border transition-colors",
+          isDarkMode ? "bg-zinc-900 border-zinc-800 text-neutral-100" : "bg-white border-editorial-border text-editorial-text"
+        )}
       >
         {/* Cover Section */}
-        <div className="w-[350px] bg-editorial-bg flex items-center justify-center relative group border-r border-editorial-border">
+        <div className={cn(
+          "w-[350px] flex items-center justify-center relative group border-r transition-colors",
+          isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-editorial-bg border-editorial-border"
+        )}>
           {book.coverUrl ? (
-            <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover grayscale-[0.1]" referrerPolicy="no-referrer" />
+            <img src={book.coverUrl} alt={book.title} className={cn("w-full h-full object-cover", isDarkMode ? "opacity-70" : "grayscale-[0.1]")} referrerPolicy="no-referrer" />
           ) : (
-            <div className="text-black/10 text-center p-12 italic font-serif">
+            <div className={cn("text-center p-12 italic font-serif", isDarkMode ? "text-white/5" : "text-black/10")}>
               <span className="text-9xl font-black opacity-10">{book.title.substring(0, 1)}</span>
             </div>
           )}
           <div className="absolute top-8 left-8">
-             <button onClick={onClose} className="bg-white border border-editorial-border p-3 rounded-none shadow-lg hover:text-editorial-accent transition-all">
+             <button 
+              onClick={onClose} 
+              className={cn(
+                "border p-3 rounded-none shadow-lg transition-all",
+                isDarkMode ? "bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-editorial-accent" : "bg-white border-editorial-border text-editorial-text hover:text-editorial-accent"
+              )}
+             >
                 <ChevronLeft size={20} />
              </button>
           </div>
         </div>
 
         {/* Info Section */}
-        <div className="flex-1 overflow-y-auto bg-white p-16 flex flex-col font-sans">
+        <div className={cn(
+          "flex-1 overflow-y-auto p-16 flex flex-col font-sans transition-colors",
+          isDarkMode ? "bg-zinc-900" : "bg-white"
+        )}>
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-xs font-bold uppercase tracking-widest italic">
               {error}
             </div>
           )}
-          <div className="flex justify-between items-start mb-10 pb-8 border-b border-editorial-border">
+          <div className={cn("flex justify-between items-start mb-10 pb-8 border-b", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
             <div className="flex-1">
                <div className="flex items-center gap-4 mb-4">
                  <span className={cn(
                    "px-4 py-1 border border-current text-[9px] font-bold uppercase tracking-[0.2em] italic",
-                   book.readingStatus === 'Gelezen' ? "text-green-700 bg-green-50/50" :
-                   book.readingStatus === 'Bezig' ? "text-blue-700 bg-blue-50/50" :
-                   book.readingStatus === 'Wil ik lezen' ? "text-orange-700 bg-orange-50/50" :
-                   "text-black/30 bg-neutral-50"
+                   book.readingStatus === 'Gelezen' ? (isDarkMode ? "text-green-500 bg-green-500/10" : "text-green-700 bg-green-50/50") :
+                   book.readingStatus === 'Bezig' ? (isDarkMode ? "text-blue-500 bg-blue-500/10" : "text-blue-700 bg-blue-50/50") :
+                   book.readingStatus === 'Wil ik lezen' ? (isDarkMode ? "text-orange-500 bg-orange-500/10" : "text-orange-700 bg-orange-50/50") :
+                   (isDarkMode ? "text-zinc-600 border-zinc-800" : "text-black/30 bg-neutral-50")
                  )}>
                    {book.readingStatus}
                  </span>
                  {book.series && (
-                   <span className="text-editorial-text/40 text-[10px] font-bold uppercase tracking-[0.15em] italic">
+                   <span className={cn("text-[10px] font-bold uppercase tracking-[0.15em] italic", isDarkMode ? "text-zinc-500" : "text-editorial-text/40")}>
                      {book.series} / Vol. {book.seriesIndex}
                    </span>
                  )}
                </div>
-               <h1 className="text-5xl font-serif font-black tracking-tight leading-[0.9] text-editorial-text mb-4 italic italic-bold">{book.title}</h1>
-               <p className="text-xl text-editorial-text/50 font-serif italic">{book.authors.join(', ')}</p>
+               <h1 className={cn("text-5xl font-serif font-black tracking-tight leading-[0.9] mb-4 italic italic-bold", isDarkMode ? "text-neutral-100" : "text-editorial-text")}>{book.title}</h1>
+               <p className={cn("text-xl font-serif italic", isDarkMode ? "text-zinc-500" : "text-editorial-text/50")}>{book.authors.join(', ')}</p>
             </div>
             <div className="flex gap-4">
               {isOwner ? (
                 <>
                   <button 
                     onClick={() => setIsEditModalOpen(true)}
-                    className="p-3 border border-editorial-border text-editorial-text/30 hover:text-editorial-text hover:border-editorial-text transition-all"
+                    className={cn(
+                      "p-3 border transition-all",
+                      isDarkMode ? "border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-400" : "border-editorial-border text-editorial-text/30 hover:text-editorial-text hover:border-editorial-text"
+                    )}
                   >
                     <Edit3 size={20} />
                   </button>
                   <button 
                     onClick={handleDelete}
                     disabled={isDeleting}
-                    className="p-3 border border-editorial-border text-editorial-text/30 hover:text-red-600 hover:border-red-600 transition-all"
+                    className={cn(
+                      "p-3 border transition-all",
+                      isDarkMode ? "border-zinc-800 text-zinc-500 hover:text-red-500 hover:border-red-500" : "border-editorial-border text-editorial-text/30 hover:text-red-600 hover:border-red-600"
+                    )}
                   >
                     <Trash2 size={20} />
                   </button>
@@ -237,7 +262,7 @@ export default function BookDetail({ book, onClose, onUpdate }: BookDetailProps)
                     "px-6 py-3 text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 shadow-xl",
                     copySuccess 
                       ? "bg-green-600 text-white" 
-                      : "bg-editorial-accent text-white hover:bg-neutral-800"
+                      : (isDarkMode ? "bg-editorial-accent text-white hover:bg-zinc-100 hover:text-zinc-900" : "bg-editorial-accent text-white hover:bg-neutral-800")
                   )}
                 >
                   {copySuccess ? <Check size={14} /> : <BookOpen size={14} />}
@@ -248,20 +273,24 @@ export default function BookDetail({ book, onClose, onUpdate }: BookDetailProps)
           </div>
 
           <div className="flex gap-3 mb-12 items-center justify-between">
-            <div className="flex text-editorial-accent text-xl">
+            <div className={cn("flex text-xl gap-0.5", isDarkMode ? "text-white" : "text-editorial-accent")}>
               {isOwner || (book.rating && book.rating > 0) ? (
-                [1, 2, 3, 4, 5].map((s) => (
-                  <Star 
-                    key={s} 
-                    size={24} 
-                    className={cn(
-                      "transition-colors",
-                      book.rating && s <= book.rating ? "fill-editorial-accent" : "text-neutral-100"
-                    )} 
-                  />
-                ))
+                [1, 2, 3, 4, 5].map((s) => {
+                  const isFilled = book.rating && s <= book.rating;
+                  return (
+                    <Star 
+                      key={s} 
+                      size={24} 
+                      strokeWidth={isFilled ? 1.5 : 2}
+                      className={cn(
+                        "transition-colors",
+                        isFilled ? (isDarkMode ? "fill-editorial-accent-bright" : "fill-current") : "fill-transparent"
+                      )} 
+                    />
+                  );
+                })
               ) : (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-black/20 italic">Geen waardering</span>
+                <span className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-zinc-700" : "text-black/20")}>Geen waardering</span>
               )}
             </div>
 
@@ -288,53 +317,75 @@ export default function BookDetail({ book, onClose, onUpdate }: BookDetailProps)
 
           <div className="grid grid-cols-2 gap-16 mb-16">
             <div className="space-y-8">
-              <DetailItem icon={<Info size={14} />} label="ISBN" value={book.isbn || 'N/A'} />
-              <DetailItem icon={<Calendar size={14} />} label="Editie / Datum" value={book.publishedDate || 'N/A'} />
-              <DetailItem icon={<Tag size={14} />} label="Categorisatie" value={book.genre.join(', ') || 'N/A'} />
+              <DetailItem icon={<Info size={14} />} label="ISBN" value={book.isbn || 'N/A'} isDarkMode={isDarkMode} />
+              <DetailItem icon={<Calendar size={14} />} label="Editie / Datum" value={book.publishedDate || 'N/A'} isDarkMode={isDarkMode} />
+              <DetailItem icon={<Tag size={14} />} label="Categorisatie" value={book.genre.join(', ') || 'N/A'} isDarkMode={isDarkMode} />
             </div>
             <div className="space-y-8">
-              <DetailItem icon={<Clock size={14} />} label="Gearchiveerd op" value={book.dateAdded ? format(book.dateAdded.toDate(), 'd MMMM yyyy', { locale: nl }) : '-'} />
+              <DetailItem icon={<Clock size={14} />} label="Gearchiveerd op" value={book.dateAdded ? format(book.dateAdded.toDate(), 'd MMMM yyyy', { locale: nl }) : '-'} isDarkMode={isDarkMode} />
               {book.readingStatus === 'Gelezen' && book.endDate && (
-                <div className="pt-4 border-t border-editorial-border space-y-4">
+                <div className={cn("pt-4 border-t space-y-4", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold uppercase text-black/40 italic">Leestijd</span>
+                    <span className={cn("text-[10px] font-bold uppercase italic", isDarkMode ? "text-zinc-500" : "text-black/40")}>Leestijd</span>
                     <span className="text-sm font-bold">{book.readingDuration} dagen</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold uppercase text-black/40 italic">Gemiddelde</span>
+                    <span className={cn("text-[10px] font-bold uppercase italic", isDarkMode ? "text-zinc-500" : "text-black/40")}>Gemiddelde</span>
                     <span className="text-sm font-bold">{book.pagesPerDay} pag/dag</span>
                   </div>
                 </div>
-              )}
-              <div className="flex flex-col gap-3 pt-4">
-                 <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.2em] italic">Digitale Toegang</label>
-                 {book.storageUrl ? (
-                   <a 
-                    href={book.storageUrl} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-3 bg-editorial-text text-white px-6 py-4 rounded-none text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl hover:bg-neutral-800 transition-all w-fit"
-                   >
-                     <ExternalLink size={14} />
-                     Open in {getPlatformIcon(book.storageUrl)}
-                   </a>
-                 ) : (
-                   <span className="text-[10px] font-bold uppercase tracking-widest text-black/20 italic">Geen digitale link</span>
-                 )}
-              </div>
+              )}                  <div className="flex items-center gap-3 pt-4">
+                  <div className="flex flex-col gap-3">
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] italic", isDarkMode ? "text-zinc-500" : "text-editorial-text/40")}>Digitale Toegang</label>
+                    {book.storageUrl ? (
+                      <div className="flex gap-4 items-center">
+                        <a 
+                          href={book.storageUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className={cn(
+                            "inline-flex items-center gap-3 px-6 py-4 rounded-none text-[10px] font-bold uppercase tracking-[0.2em] shadow-xl transition-all w-fit",
+                            isDarkMode ? "bg-zinc-100 text-zinc-900 hover:bg-neutral-200" : "bg-editorial-text text-white hover:bg-neutral-800"
+                          )}
+                        >
+                          <ExternalLink size={14} />
+                          Open in {getPlatformIcon(book.storageUrl)}
+                        </a>
+                        {isOwner && (
+                          <button 
+                            onClick={() => setIsShareModalOpen(true)}
+                            className={cn(
+                              "border p-4 transition-all shadow-md flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest",
+                              isDarkMode ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:text-editorial-accent hover:border-editorial-accent" : "bg-white border-editorial-border text-editorial-text hover:text-editorial-accent hover:border-editorial-accent"
+                            )}
+                            title="Deel locatie via chat"
+                          >
+                            <Send size={14} />
+                            Deel
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <span className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-zinc-700" : "text-black/20")}>Geen digitale link</span>
+                    )}
+                  </div>
+                 </div>
             </div>
           </div>
 
           <div className="space-y-4 flex-1">
-             <label className="text-[9px] font-bold uppercase text-editorial-text/40 tracking-[0.2em] italic">
+             <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] italic", isDarkMode ? "text-zinc-500" : "text-editorial-text/40")}>
                {isOwner ? 'Persoonlijke Annotaties' : `Beschrijving`}
              </label>
-             <div className="bg-editorial-bg/50 p-10 border border-editorial-border min-h-[180px] text-editorial-text/70 leading-relaxed font-serif italic text-lg whitespace-pre-wrap">
+             <div className={cn(
+               "p-10 border min-h-[180px] leading-relaxed font-serif italic text-lg whitespace-pre-wrap transition-colors",
+               isDarkMode ? "bg-zinc-950/50 border-zinc-800 text-zinc-400" : "bg-editorial-bg/50 border-editorial-border text-editorial-text/70"
+             )}>
                {isOwner ? (book.notes || 'Er zijn nog geen notities voor dit exemplaar.') : (book.description || 'Geen beschrijving beschikbaar.')}
              </div>
           </div>
 
-          <div className="mt-16 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-editorial-text/30 pt-8 border-t border-editorial-border italic">
+          <div className={cn("mt-16 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] pt-8 border-t italic transition-colors", isDarkMode ? "text-zinc-700 border-zinc-800" : "text-editorial-text/30 border-editorial-border")}>
              <div className="flex items-center gap-3">
                <Smartphone size={14} /> Mobiele Toegang
              </div>
@@ -352,20 +403,30 @@ export default function BookDetail({ book, onClose, onUpdate }: BookDetailProps)
             onUpdate();
             // We don't close the detail here, but it will refresh thanks to onUpdate
           }}
+          isDarkMode={isDarkMode}
+        />
+      )}
+
+      {isShareModalOpen && (
+        <ShareBookModal 
+          book={book}
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          isDarkMode={isDarkMode}
         />
       )}
     </div>
   );
 }
 
-function DetailItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
+function DetailItem({ icon, label, value, isDarkMode }: { icon: React.ReactNode, label: string, value: string, isDarkMode?: boolean }) {
   return (
     <div className="flex flex-col gap-2">
-       <label className="text-[10px] font-bold uppercase text-zinc-400 tracking-widest flex items-center gap-2">
+       <label className={cn("text-[10px] font-bold uppercase tracking-widest flex items-center gap-2", isDarkMode ? "text-zinc-600" : "text-zinc-400")}>
           {icon}
           {label}
        </label>
-       <p className="text-sm font-bold text-zinc-900">{value}</p>
+       <p className={cn("text-sm font-bold", isDarkMode ? "text-zinc-200" : "text-zinc-900")}>{value}</p>
     </div>
   );
 }

@@ -23,9 +23,10 @@ interface UserProfileDetailProps {
   user: UserProfile;
   onBack: () => void;
   onChat: (user: UserProfile) => void;
+  isDarkMode?: boolean;
 }
 
-export default function UserProfileDetail({ user, onBack, onChat }: UserProfileDetailProps) {
+export default function UserProfileDetail({ user, onBack, onChat, isDarkMode }: UserProfileDetailProps) {
   const [books, setBooks] = useState<Book[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -66,44 +67,50 @@ export default function UserProfileDetail({ user, onBack, onChat }: UserProfileD
     <div className="max-w-6xl mx-auto space-y-12 pb-20">
       <button 
         onClick={onBack}
-        className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] hover:text-editorial-accent transition-colors mb-4"
+        className={cn(
+          "flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] transition-colors mb-4",
+          isDarkMode ? "text-white/40 hover:text-editorial-accent-bright" : "text-black/40 hover:text-editorial-accent"
+        )}
       >
         <ChevronLeft size={16} /> Terug naar Feed
       </button>
 
       {/* Header */}
       <div className="relative">
-        <div className="h-64 bg-editorial-accent/5 border border-editorial-border overflow-hidden relative">
-          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]"></div>
+        <div className={cn(
+          "h-64 border overflow-hidden relative",
+          isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-editorial-accent/5 border-editorial-border"
+        )}>
+          <div className={cn("absolute inset-0 opacity-10", isDarkMode ? "bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]" : "bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]")}></div>
         </div>
         
         <div className="px-12 -mt-16 relative z-10 flex flex-col md:flex-row items-end gap-8 justify-between">
-          <div className="flex flex-col md:flex-row items-end gap-8">
-            <div className="relative group">
+          <div className="flex flex-col md:flex-row items-end gap-8 text-center md:text-left">
+            <div className="relative group mx-auto md:mx-0">
               <img 
                 src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`}
                 alt={user.displayName}
-                className="w-40 h-40 rounded-none border-4 border-white shadow-2xl object-cover bg-white"
+                className={cn("w-40 h-40 rounded-none border-4 shadow-2xl object-cover", isDarkMode ? "border-zinc-800 bg-zinc-900" : "border-white bg-white")}
                 referrerPolicy="no-referrer"
               />
             </div>
             <div className="mb-4">
               <h1 className="text-5xl font-serif font-black tracking-tight italic leading-none mb-4">{user.displayName}</h1>
-              <div className="flex flex-wrap gap-4 text-[10px] font-bold uppercase tracking-widest text-black/40">
+              <div className={cn("flex flex-wrap gap-4 text-[10px] font-bold uppercase tracking-widest", isDarkMode ? "text-white/60" : "text-black/40")}>
                 <span className="flex items-center gap-2"><MapPin size={12} /> {user.city || 'Onbekend'}, {user.country || 'Nederland'}</span>
                 <span className="flex items-center gap-2"><Globe size={12} /> {followerCount} Volgers</span>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-4 mb-4">
+          <div className="flex gap-4 mb-4 mx-auto md:mx-0">
              <button 
                onClick={handleFollowToggle}
                className={cn(
                  "px-8 py-3 text-[10px] font-bold uppercase tracking-widest border transition-all flex items-center gap-2",
                  isFollowing 
-                   ? "bg-white border-editorial-border text-black/40 hover:text-red-500 hover:border-red-500" 
-                   : "bg-editorial-accent border-editorial-accent text-white hover:bg-neutral-800"
+                   ? (isDarkMode ? "bg-zinc-900 border-zinc-800 text-white/40 hover:text-red-500 hover:border-red-500" : "bg-white border-editorial-border text-black/40 hover:text-red-500 hover:border-red-500")
+                   : (isDarkMode ? "bg-white border-white text-zinc-900 hover:bg-neutral-200" : "bg-editorial-accent border-editorial-accent text-white hover:bg-neutral-800")
                )}
              >
                {isFollowing ? <UserMinus size={14} /> : <UserPlus size={14} />}
@@ -112,7 +119,10 @@ export default function UserProfileDetail({ user, onBack, onChat }: UserProfileD
              {isFollowing && (
                <button 
                  onClick={() => onChat(user)}
-                 className="px-8 py-3 text-[10px] font-bold uppercase tracking-widest border border-editorial-text text-editorial-text hover:bg-editorial-text hover:text-white transition-all flex items-center gap-2"
+                 className={cn(
+                    "px-8 py-3 text-[10px] font-bold uppercase tracking-widest border transition-all flex items-center gap-2",
+                    isDarkMode ? "border-white text-white hover:bg-white hover:text-zinc-900" : "border-editorial-text text-editorial-text hover:bg-editorial-text hover:text-white"
+                 )}
                >
                  <MessageCircle size={14} /> Bericht
                </button>
@@ -125,22 +135,22 @@ export default function UserProfileDetail({ user, onBack, onChat }: UserProfileD
          {/* Bio / Stats */}
          <div className="col-span-12 lg:col-span-4 space-y-10">
             <section className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-editorial-accent border-b border-editorial-border pb-2 italic">Achtergrond</h3>
-              <div className="bg-white border border-editorial-border p-8 text-sm font-serif italic text-black/60 leading-relaxed">
+              <h3 className={cn("text-xs font-bold uppercase tracking-[0.2em] border-b pb-2 italic", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Achtergrond</h3>
+              <div className={cn("border p-8 text-sm font-serif italic leading-relaxed", isDarkMode ? "bg-zinc-900 border-zinc-800 text-white/60" : "bg-white border-editorial-border text-black/60")}>
                 Op de bibliotheek van {user.displayName} staan momenteel {books.length} titels gearchiveerd.
               </div>
             </section>
 
             <section className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-editorial-accent border-b border-editorial-border pb-2 italic">Statistiek</h3>
+              <h3 className={cn("text-xs font-bold uppercase tracking-[0.2em] border-b pb-2 italic", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Statistiek</h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-editorial-bg border border-editorial-border p-6 text-center">
+                <div className={cn("border p-6 text-center", isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-editorial-bg border-editorial-border")}>
                    <span className="block text-2xl font-serif font-black">{books.length}</span>
-                   <span className="text-[9px] uppercase font-bold tracking-widest opacity-40">Boeken</span>
+                   <span className={cn("text-[9px] uppercase font-bold tracking-widest", isDarkMode ? "text-white/40" : "opacity-40")}>Boeken</span>
                 </div>
-                <div className="bg-editorial-bg border border-editorial-border p-6 text-center">
+                <div className={cn("border p-6 text-center", isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-editorial-bg border-editorial-border")}>
                    <span className="block text-2xl font-serif font-black">{books.filter(b => b.readingStatus === 'Gelezen').length}</span>
-                   <span className="text-[9px] uppercase font-bold tracking-widest opacity-40">Uitlezen</span>
+                   <span className={cn("text-[9px] uppercase font-bold tracking-widest", isDarkMode ? "text-white/40" : "opacity-40")}>Uitlezen</span>
                 </div>
               </div>
             </section>
@@ -148,18 +158,18 @@ export default function UserProfileDetail({ user, onBack, onChat }: UserProfileD
 
          {/* Collection */}
          <div className="col-span-12 lg:col-span-8 space-y-8">
-            <div className="flex items-center justify-between border-b border-editorial-border pb-4">
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-editorial-accent italic">Publieke Collectie</h3>
+            <div className={cn("flex items-center justify-between border-b pb-4", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
+              <h3 className={cn("text-xs font-bold uppercase tracking-[0.2em] italic", isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent")}>Publieke Collectie</h3>
               <div className="flex gap-2">
                 <button 
                   onClick={() => setViewMode('grid')}
-                  className={cn("p-2 transition-colors", viewMode === 'grid' ? "text-editorial-accent" : "text-black/20")}
+                  className={cn("p-2 transition-colors", viewMode === 'grid' ? (isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent") : (isDarkMode ? "text-white/40" : "text-black/20"))}
                 >
                   <Grid size={18} />
                 </button>
                 <button 
                   onClick={() => setViewMode('list')}
-                  className={cn("p-2 transition-colors", viewMode === 'list' ? "text-editorial-accent" : "text-black/20")}
+                  className={cn("p-2 transition-colors", viewMode === 'list' ? (isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent") : (isDarkMode ? "text-white/40" : "text-black/20"))}
                 >
                   <ListIcon size={18} />
                 </button>
@@ -178,29 +188,35 @@ export default function UserProfileDetail({ user, onBack, onChat }: UserProfileD
                 >
                   {viewMode === 'grid' ? (
                     <div className="space-y-4">
-                      <div className="aspect-[2/3] bg-neutral-100 border border-editorial-border overflow-hidden relative shadow-lg group-hover:border-editorial-accent transition-all duration-500">
+                      <div className={cn("aspect-[2/3] border overflow-hidden relative shadow-lg group-hover:border-editorial-accent transition-all duration-500", isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-neutral-100 border-editorial-border")}>
                         {book.coverUrl ? (
-                          <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-700" />
+                          <img src={book.coverUrl} alt={book.title} className={cn("w-full h-full object-cover transition-all duration-700", isDarkMode ? "opacity-70 group-hover:opacity-100" : "grayscale-[0.2] group-hover:grayscale-0")} />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center grayscale opacity-20">
                              <span className="text-[8px] font-bold uppercase tracking-[0.3em]">{book.title}</span>
                           </div>
                         )}
                         <div className="absolute inset-0 bg-editorial-accent/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                           <span className="bg-white px-4 py-2 text-[9px] font-bold uppercase tracking-widest shadow-xl">Bekijk Details</span>
+                           <span className={cn("px-4 py-2 text-[9px] font-bold uppercase tracking-widest shadow-xl", isDarkMode ? "bg-zinc-900 text-white" : "bg-white text-editorial-text")}>Bekijk Details</span>
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[10px] font-bold uppercase truncate tracking-widest group-hover:text-editorial-accent transition-colors">{book.title}</p>
-                        <p className="text-[9px] font-serif italic text-black/40 truncate">{book.authors.join(', ')}</p>
+                        <p className={cn("text-[10px] font-bold uppercase truncate tracking-widest transition-colors", isDarkMode ? "text-white group-hover:text-editorial-accent-bright" : "text-editorial-text group-hover:text-editorial-accent")}>{book.title}</p>
+                        <p className={cn("text-[9px] font-serif italic truncate", isDarkMode ? "text-white/40" : "text-black/40")}>{book.authors.join(', ')}</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-6 p-4 border border-editorial-border hover:border-editorial-accent transition-all bg-white">
-                      <img src={book.coverUrl} className="w-12 h-16 object-cover" />
+                    <div className={cn("flex items-center gap-6 p-4 border hover:border-editorial-accent transition-all", isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-editorial-border")}>
+                      {book.coverUrl ? (
+                         <img src={book.coverUrl} className={cn("w-12 h-16 object-cover", isDarkMode ? "opacity-90" : "grayscale-0")} />
+                      ) : (
+                        <div className="w-12 h-16 bg-neutral-100 flex items-center justify-center opacity-20">
+                          <BookIcon size={12} />
+                        </div>
+                      )}
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-widest">{book.title}</p>
-                        <p className="text-[10px] font-serif italic text-black/40">{book.authors.join(', ')}</p>
+                        <p className={cn("text-xs font-bold uppercase tracking-widest", isDarkMode ? "text-white font-bold" : "text-editorial-text")}>{book.title}</p>
+                        <p className={cn("text-[10px] font-serif italic", isDarkMode ? "text-white/40" : "text-black/40")}>{book.authors.join(', ')}</p>
                       </div>
                     </div>
                   )}
@@ -215,6 +231,7 @@ export default function UserProfileDetail({ user, onBack, onChat }: UserProfileD
            book={{...selectedBook, storageUrl: ''}} // Hide storage URL for others
            onClose={() => setSelectedBook(null)}
            onUpdate={() => setSelectedBook(null)}
+           isDarkMode={isDarkMode}
          />
       )}
     </div>
