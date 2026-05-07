@@ -18,6 +18,8 @@ import { socialService } from '../../services/socialService';
 import { auth } from '../../lib/firebase';
 import BookDetail from '../Library/BookDetail';
 import { cn } from '../../lib/utils';
+import { useLanguage } from '../../lib/LanguageContext';
+import { translateStatus } from '../../translations';
 
 interface UserProfileDetailProps {
   user: UserProfile;
@@ -27,6 +29,7 @@ interface UserProfileDetailProps {
 }
 
 export default function UserProfileDetail({ user, onBack, onChat, isDarkMode }: UserProfileDetailProps) {
+  const { t, language } = useLanguage();
   const [books, setBooks] = useState<Book[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -72,7 +75,7 @@ export default function UserProfileDetail({ user, onBack, onChat, isDarkMode }: 
           isDarkMode ? "text-white/40 hover:text-editorial-accent-bright" : "text-black/40 hover:text-editorial-accent"
         )}
       >
-        <ChevronLeft size={16} /> Terug naar Feed
+        <ChevronLeft size={16} /> {t('social.backToFeed')}
       </button>
 
       {/* Header */}
@@ -97,8 +100,8 @@ export default function UserProfileDetail({ user, onBack, onChat, isDarkMode }: 
             <div className="mb-4">
               <h1 className="text-5xl font-serif font-black tracking-tight italic leading-none mb-4">{user.displayName}</h1>
               <div className={cn("flex flex-wrap gap-4 text-[10px] font-bold uppercase tracking-widest", isDarkMode ? "text-white/60" : "text-black/40")}>
-                <span className="flex items-center gap-2"><MapPin size={12} /> {user.city || 'Onbekend'}, {user.country || 'Nederland'}</span>
-                <span className="flex items-center gap-2"><Globe size={12} /> {followerCount} Volgers</span>
+                <span className="flex items-center gap-2"><MapPin size={12} /> {user.city || t('common.unknown')}, {user.country || (language === 'nl' ? 'Nederland' : 'Netherlands')}</span>
+                <span className="flex items-center gap-2"><Globe size={12} /> {followerCount} {t('social.followers') || 'Volgers'}</span>
               </div>
             </div>
           </div>
@@ -114,7 +117,7 @@ export default function UserProfileDetail({ user, onBack, onChat, isDarkMode }: 
                )}
              >
                {isFollowing ? <UserMinus size={14} /> : <UserPlus size={14} />}
-               {isFollowing ? 'Ontvolgen' : 'Volgen'}
+               {isFollowing ? (t('social.unfollow') || 'Ontvolgen') : (t('social.follow') || 'Volgen')}
              </button>
              {isFollowing && (
                <button 
@@ -124,7 +127,7 @@ export default function UserProfileDetail({ user, onBack, onChat, isDarkMode }: 
                     isDarkMode ? "border-white text-white hover:bg-white hover:text-zinc-900" : "border-editorial-text text-editorial-text hover:bg-editorial-text hover:text-white"
                  )}
                >
-                 <MessageCircle size={14} /> Bericht
+                 <MessageCircle size={14} /> {t('social.message') || 'Bericht'}
                </button>
              )}
           </div>
@@ -135,22 +138,22 @@ export default function UserProfileDetail({ user, onBack, onChat, isDarkMode }: 
          {/* Bio / Stats */}
          <div className="col-span-12 lg:col-span-4 space-y-10">
             <section className="space-y-4">
-              <h3 className={cn("text-xs font-bold uppercase tracking-[0.2em] border-b pb-2 italic", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Achtergrond</h3>
+              <h3 className={cn("text-xs font-bold uppercase tracking-[0.2em] border-b pb-2 italic", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>{t('social.background')}</h3>
               <div className={cn("border p-8 text-sm font-serif italic leading-relaxed", isDarkMode ? "bg-zinc-900 border-zinc-800 text-white/60" : "bg-white border-editorial-border text-black/60")}>
-                Op de bibliotheek van {user.displayName} staan momenteel {books.length} titels gearchiveerd.
+                {t('social.libraryStatusOf', { name: user.displayName, count: books.length })}
               </div>
             </section>
 
             <section className="space-y-4">
-              <h3 className={cn("text-xs font-bold uppercase tracking-[0.2em] border-b pb-2 italic", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Statistiek</h3>
+              <h3 className={cn("text-xs font-bold uppercase tracking-[0.2em] border-b pb-2 italic", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>{t('social.statistics')}</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className={cn("border p-6 text-center", isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-editorial-bg border-editorial-border")}>
                    <span className="block text-2xl font-serif font-black">{books.length}</span>
-                   <span className={cn("text-[9px] uppercase font-bold tracking-widest", isDarkMode ? "text-white/40" : "opacity-40")}>Boeken</span>
+                   <span className={cn("text-[9px] uppercase font-bold tracking-widest", isDarkMode ? "text-white/40" : "opacity-40")}>{t('library.books')}</span>
                 </div>
                 <div className={cn("border p-6 text-center", isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-editorial-bg border-editorial-border")}>
                    <span className="block text-2xl font-serif font-black">{books.filter(b => b.readingStatus === 'Gelezen').length}</span>
-                   <span className={cn("text-[9px] uppercase font-bold tracking-widest", isDarkMode ? "text-white/40" : "opacity-40")}>Uitlezen</span>
+                   <span className={cn("text-[9px] uppercase font-bold tracking-widest", isDarkMode ? "text-white/40" : "opacity-40")}>{t('library.read')}</span>
                 </div>
               </div>
             </section>
@@ -159,7 +162,7 @@ export default function UserProfileDetail({ user, onBack, onChat, isDarkMode }: 
          {/* Collection */}
          <div className="col-span-12 lg:col-span-8 space-y-8">
             <div className={cn("flex items-center justify-between border-b pb-4", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-              <h3 className={cn("text-xs font-bold uppercase tracking-[0.2em] italic", isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent")}>Publieke Collectie</h3>
+              <h3 className={cn("text-xs font-bold uppercase tracking-[0.2em] italic", isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent")}>{t('social.publicCollection')}</h3>
               <div className="flex gap-2">
                 <button 
                   onClick={() => setViewMode('grid')}
@@ -197,7 +200,7 @@ export default function UserProfileDetail({ user, onBack, onChat, isDarkMode }: 
                           </div>
                         )}
                         <div className="absolute inset-0 bg-editorial-accent/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                           <span className={cn("px-4 py-2 text-[9px] font-bold uppercase tracking-widest shadow-xl", isDarkMode ? "bg-zinc-900 text-white" : "bg-white text-editorial-text")}>Bekijk Details</span>
+                           <span className={cn("px-4 py-2 text-[9px] font-bold uppercase tracking-widest shadow-xl", isDarkMode ? "bg-zinc-900 text-white" : "bg-white text-editorial-text")}>{t('social.viewDetails')}</span>
                         </div>
                       </div>
                       <div className="space-y-1">

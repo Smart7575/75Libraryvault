@@ -15,18 +15,33 @@ import {
 import { Book } from '../../services/bookService';
 import { BookOpen, CheckCircle2, Bookmark, Star, Clock, Trophy } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useLanguage } from '../../lib/LanguageContext';
+import { translateStatus } from '../../translations';
 
 interface StatsProps {
   books: Book[];
   isDarkMode?: boolean;
+  readingGoal?: number;
 }
 
 const COLORS = ['#1a1a1a', '#3d5a44', '#d9d5ce', '#e0ddd8', '#1a1a1a', '#3d5a44'];
 
-export default function Stats({ books, isDarkMode }: StatsProps) {
+export default function Stats({ books, isDarkMode, readingGoal = 24 }: StatsProps) {
+  const { t, language } = useLanguage();
   const stats = useMemo(() => {
     const total = books.length;
+    const currentYear = new Date().getFullYear();
     const read = books.filter(b => b.readingStatus === 'Gelezen').length;
+    const goalProgressCount = books.filter(b => {
+      if (b.readingStatus !== 'Gelezen') return false;
+      if (!b.endDate || !b.startDate) return false;
+      try {
+        const endYear = new Date(b.endDate).getFullYear();
+        return endYear === currentYear;
+      } catch (e) {
+        return false;
+      }
+    }).length;
     const reading = books.filter(b => b.readingStatus === 'Bezig').length;
     const wishlist = books.filter(b => b.readingStatus === 'Wil ik lezen').length;
     
@@ -45,43 +60,43 @@ export default function Stats({ books, isDarkMode }: StatsProps) {
 
     // Reading status data
     const statusData = [
-      { name: 'Gelezen', value: read },
-      { name: 'Bezig', value: reading },
-      { name: 'Ongelezen', value: total - read - reading }
+      { name: translateStatus('Gelezen', language), value: read },
+      { name: translateStatus('Bezig', language), value: reading },
+      { name: translateStatus('Ongelezen', language), value: total - read - reading }
     ].filter(d => d.value > 0);
 
-    return { total, read, reading, wishlist, genreData, statusData };
-  }, [books]);
+    return { total, read, reading, wishlist, genreData, statusData, goalProgressCount };
+  }, [books, language]);
 
   return (
     <div className="space-y-12 pb-12 font-sans">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
         <StatCard 
           icon={<BookOpen size={18} />} 
-          label="Catalogus" 
+          label={t('dashboard.catalog')} 
           value={stats.total} 
-          subText="Totaal aantal boekwerken"
+          subText={t('dashboard.totalBooksDesc')}
           isDarkMode={isDarkMode}
         />
         <StatCard 
           icon={<CheckCircle2 size={18} />} 
-          label="Gelezen" 
+          label={translateStatus('Gelezen', language)} 
           value={stats.read} 
-          subText={`${Math.round((stats.read / stats.total) * 100) || 0}% van de collectie`}
+          subText={t('dashboard.collectionPct', { pct: (Math.round((stats.read / stats.total) * 100) || 0) })}
           isDarkMode={isDarkMode}
         />
         <StatCard 
           icon={<Bookmark size={18} />} 
-          label="Prioriteit" 
+          label={t('dashboard.priority')} 
           value={stats.wishlist} 
-          subText="Items op verlanglijst"
+          subText={t('dashboard.watchlistItems')}
           isDarkMode={isDarkMode}
         />
         <StatCard 
           icon={<Trophy size={18} />} 
-          label="Leesdoel 2026" 
-          value={24} 
-          subText="Nog 8 te gaan"
+          label={t('dashboard.readingGoal')} 
+          value={stats.goalProgressCount} 
+          subText={t('dashboard.stillToGo', { count: Math.max(0, readingGoal - stats.goalProgressCount) })}
           isDarkMode={isDarkMode}
         />
       </div>
@@ -89,8 +104,8 @@ export default function Stats({ books, isDarkMode }: StatsProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <div className={cn("p-10 rounded-none border shadow-sm", isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-editorial-border")}>
           <div className={cn("flex items-center justify-between mb-10 border-b pb-4", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-            <h3 className={cn("text-xl font-serif font-black italic", isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent")}>Populaire Genres</h3>
-            <span className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-white/40" : "text-black/40")}>Bibliotheek Focus</span>
+            <h3 className={cn("text-xl font-serif font-black italic", isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent")}>{t('dashboard.popularGenres')}</h3>
+            <span className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-white/40" : "text-black/40")}>{t('dashboard.libraryFocus')}</span>
           </div>
           <div className="h-64 min-w-0 relative">
             <ResponsiveContainer width="100%" height="100%">
@@ -129,8 +144,8 @@ export default function Stats({ books, isDarkMode }: StatsProps) {
 
         <div className={cn("p-10 rounded-none border shadow-sm flex flex-col", isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-editorial-border")}>
           <div className={cn("flex items-center justify-between mb-10 border-b pb-4", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-             <h3 className={cn("text-xl font-serif font-black italic", isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent")}>Collectie Status</h3>
-             <span className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-white/40" : "text-black/40")}>Data Overzicht</span>
+             <h3 className={cn("text-xl font-serif font-black italic", isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent")}>{t('dashboard.collectionStatus')}</h3>
+             <span className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-white/40" : "text-black/40")}>{t('dashboard.dataOverview')}</span>
           </div>
           <div className="flex-1 flex items-center">
             <div className="w-1/2 h-64 min-w-0 relative">

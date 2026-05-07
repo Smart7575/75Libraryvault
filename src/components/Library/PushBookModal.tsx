@@ -6,6 +6,7 @@ import { socialService } from '../../services/socialService';
 import { UserProfile } from '../../services/userService';
 import { auth } from '../../lib/firebase';
 import { cn } from '../../lib/utils';
+import { useLanguage } from '../../lib/LanguageContext';
 
 interface PushBookModalProps {
   book: Book;
@@ -15,6 +16,7 @@ interface PushBookModalProps {
 }
 
 export default function PushBookModal({ book, isOpen, onClose, isDarkMode }: PushBookModalProps) {
+  const { t } = useLanguage();
   const [following, setFollowing] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,7 +43,7 @@ export default function PushBookModal({ book, isOpen, onClose, isDarkMode }: Pus
     setIsSending(true);
 
     try {
-      const pushText = message.trim() || `Ik heb dit boek naar je gepusht: ${book.title}`;
+      const pushText = message.trim() || t('library.pushDefaultMessage', { title: book.title }) || `Ik heb dit boek naar je gepusht: ${book.title}`;
       
       // Construct message data
       // We send full book data as a push so the receiver doesn't need to "read" the sender's book doc (which they might not have access to)
@@ -103,7 +105,7 @@ export default function PushBookModal({ book, isOpen, onClose, isDarkMode }: Pus
             )}>
               <div className="flex items-center gap-3">
                 <Smartphone size={18} className={isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent"} />
-                <h3 className="text-xl font-serif italic font-black">Push naar Volger</h3>
+                <h3 className="text-xl font-serif italic font-black">{t('library.pushToFollower') || 'Push naar Volger'}</h3>
               </div>
               <button onClick={onClose} className="p-2 hover:text-red-500 transition-colors">
                 <X size={20} />
@@ -116,19 +118,19 @@ export default function PushBookModal({ book, isOpen, onClose, isDarkMode }: Pus
                   <div className={cn("w-16 h-16 rounded-full flex items-center justify-center mb-6", isDarkMode ? "bg-editorial-accent-bright text-zinc-900" : "bg-editorial-accent text-white")}>
                     <Check size={32} />
                   </div>
-                  <h4 className="text-2xl font-serif italic font-black mb-2">Verzonden!</h4>
-                  <p className="text-sm opacity-60 font-serif italic">{selectedUser?.displayName} heeft je push ontvangen.</p>
+                  <h4 className="text-2xl font-serif italic font-black mb-2">{t('library.sent') || 'Verzonden!'}</h4>
+                  <p className="text-sm opacity-60 font-serif italic">{t('library.sentDesc', { name: selectedUser?.displayName }) || `${selectedUser?.displayName} heeft je push ontvangen.`}</p>
                 </div>
               ) : (
                 <>
                   {/* Select Receiver */}
                   <div>
-                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] mb-4 block italic", isDarkMode ? "text-zinc-500" : "text-black/40")}>Kies een volger</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] mb-4 block italic", isDarkMode ? "text-zinc-500" : "text-black/40")}>{t('library.chooseAFollower') || 'Kies een volger'}</label>
                     <div className="relative mb-4">
                       <Search size={14} className={cn("absolute left-4 top-1/2 -translate-y-1/2", isDarkMode ? "text-white/30" : "text-black/20")} />
                       <input 
                         type="text" 
-                        placeholder="Naam of email..." 
+                        placeholder={t('library.nameOrEmail') || "Naam of email..."} 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className={cn(
@@ -143,9 +145,9 @@ export default function PushBookModal({ book, isOpen, onClose, isDarkMode }: Pus
                       isDarkMode ? "border-zinc-800 divide-zinc-800" : "border-editorial-border divide-editorial-border"
                     )}>
                       {loading ? (
-                        <div className="p-6 text-center italic text-xs animate-pulse opacity-40">Volgers laden...</div>
+                        <div className="p-6 text-center italic text-xs animate-pulse opacity-40">{t('library.loadingFollowers') || 'Volgers laden...'}</div>
                       ) : filteredFollowing.length === 0 ? (
-                        <div className="p-6 text-center italic text-xs opacity-40">Geen volgers gevonden.</div>
+                        <div className="p-6 text-center italic text-xs opacity-40">{t('library.noFollowersFound') || 'Geen volgers gevonden.'}</div>
                       ) : (
                         filteredFollowing.map(u => (
                           <div 
@@ -173,8 +175,8 @@ export default function PushBookModal({ book, isOpen, onClose, isDarkMode }: Pus
                   <div className="space-y-4 pt-4 border-t border-editorial-border dark:border-zinc-800">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <label className={cn("text-sm font-bold", isDarkMode ? "text-zinc-200" : "text-editorial-text")}>Voeg opslaglocatie toe</label>
-                        <Info size={12} className="opacity-40 cursor-help" title="De ontvanger kan via de link het bestand downloaden als ze toegang hebben." />
+                        <label className={cn("text-sm font-bold", isDarkMode ? "text-zinc-200" : "text-editorial-text")}>{t('library.includeStorageLink') || 'Voeg opslaglocatie toe'}</label>
+                        <Info size={12} className="opacity-40 cursor-help" title={t('library.includeStorageDesc') || "De ontvanger kan via de link het bestand downloaden als ze toegang hebben."} />
                       </div>
                       <button 
                         onClick={() => setIncludeStorage(!includeStorage)}
@@ -191,11 +193,11 @@ export default function PushBookModal({ book, isOpen, onClose, isDarkMode }: Pus
                     </div>
 
                     <div>
-                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] mb-2 block italic", isDarkMode ? "text-zinc-500" : "text-black/40")}>Bericht (optioneel)</label>
+                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] mb-2 block italic", isDarkMode ? "text-zinc-500" : "text-black/40")}>{t('library.optionalMessage') || 'Bericht (optioneel)'}</label>
                       <textarea 
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Bijv. Dit boek moet je echt lezen!"
+                        placeholder={t('library.optionalMessagePlaceholder') || "Bijv. Dit boek moet je echt lezen!"}
                         className={cn(
                           "w-full border p-4 text-xs font-serif italic min-h-[80px] focus:outline-none focus:border-editorial-accent transition-all",
                           isDarkMode ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-editorial-border"
@@ -218,7 +220,7 @@ export default function PushBookModal({ book, isOpen, onClose, isDarkMode }: Pus
                   isDarkMode ? "border-zinc-800 hover:bg-zinc-800" : "border-editorial-border hover:bg-neutral-100"
                 )}
               >
-                Annuleren
+                {t('common.cancel') || 'Annuleren'}
               </button>
               {!success && (
                 <button 
@@ -230,10 +232,10 @@ export default function PushBookModal({ book, isOpen, onClose, isDarkMode }: Pus
                     (!selectedUser || isSending) && "opacity-50 cursor-not-allowed"
                   )}
                 >
-                  {isSending ? 'Versturen...' : (
+                  {isSending ? (t('library.sending') || 'Versturen...') : (
                     <>
                       <Send size={14} />
-                      Push Boek
+                      {t('library.pushToFollower') || 'Push Boek'}
                     </>
                   )}
                 </button>

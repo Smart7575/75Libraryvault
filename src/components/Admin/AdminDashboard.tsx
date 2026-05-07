@@ -14,10 +14,12 @@ import { UserProfile, userService } from '../../services/userService';
 import { socialService, Activity } from '../../services/socialService';
 import { cn } from '../../lib/utils';
 import { auth } from '../../lib/firebase';
+import { useLanguage } from '../../lib/LanguageContext';
 
 const ADMIN_PASSWORD = 'Admin@Library75'; // In a real app, this would be more secure or managed via custom claims
 
 export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean }) {
+  const { t } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,7 +35,7 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
       setIsAuthenticated(true);
       setError('');
     } else {
-      setError('Onjuist wachtwoord.');
+      setError(t('admin.incorrectPassword') || 'Onjuist wachtwoord.');
     }
   };
 
@@ -67,14 +69,14 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
   };
 
   const handleDeleteUser = async (uid: string) => {
-    if (window.confirm('Weet je zeker dat je deze gebruiker wilt verwijderen? Dit is onomkeerbaar.')) {
+    if (window.confirm(t('admin.deleteUserConfirm') || 'Weet je zeker dat je deze gebruiker wilt verwijderen? Dit is onomkeerbaar.')) {
       await userService.deleteUser(uid);
       setUsers(prev => prev.filter(u => u.uid !== uid));
     }
   };
 
   const handleDeleteActivity = async (id: string) => {
-    if (window.confirm('Activiteit verwijderen?')) {
+    if (window.confirm(t('admin.deleteActivityConfirm') || 'Activiteit verwijderen?')) {
       await socialService.deleteActivity(id);
       setActivities(prev => prev.filter(a => a.id !== id));
     }
@@ -94,10 +96,10 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
           <div className={cn("w-16 h-16 flex items-center justify-center rounded-full mx-auto mb-6", isDarkMode ? "bg-zinc-950" : "bg-editorial-accent/10")}>
             <Lock className={isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent"} size={32} />
           </div>
-          <h2 className="text-2xl font-serif font-black uppercase tracking-tight italic mb-8">Admin Toegang</h2>
+          <h2 className="text-2xl font-serif font-black uppercase tracking-tight italic mb-8">{t('admin.access') || 'Admin Toegang'}</h2>
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2 text-left">
-              <label className={cn("text-[10px] font-bold uppercase tracking-widest", isDarkMode ? "text-white/40" : "text-black/40")}>Voer wachtwoord in</label>
+              <label className={cn("text-[10px] font-bold uppercase tracking-widest", isDarkMode ? "text-white/40" : "text-black/40")}>{t('admin.enterPassword') || 'Voer wachtwoord in'}</label>
               <input 
                 type="password" 
                 value={password}
@@ -118,7 +120,7 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
                 isDarkMode ? "bg-white text-zinc-900 hover:bg-neutral-200" : "bg-editorial-accent text-white hover:bg-neutral-800"
               )}
             >
-              Ontgrendel Dashboard
+              {t('admin.unlock') || 'Ontgrendel Dashboard'}
             </button>
           </form>
         </motion.div>
@@ -130,8 +132,8 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
     <div className="space-y-12">
       <div className={cn("pb-8 border-b flex items-center justify-between", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
         <div>
-          <h2 className="text-4xl font-serif font-black tracking-tight italic leading-none">Dashboard</h2>
-          <p className={cn("text-sm font-serif italic mt-1", isDarkMode ? "text-white/40" : "text-black/40")}>Beheer gebruikers en platformactiviteit</p>
+          <h2 className="text-4xl font-serif font-black tracking-tight italic leading-none">{t('admin.dashboard') || 'Dashboard'}</h2>
+          <p className={cn("text-sm font-serif italic mt-1", isDarkMode ? "text-white/40" : "text-black/40")}>{t('admin.manageUsers') || 'Beheer gebruikers en platformactiviteit'}</p>
         </div>
         <div className="flex gap-4">
           <button 
@@ -143,7 +145,7 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
                 : (isDarkMode ? "bg-zinc-900 border-zinc-800 text-white/40 hover:text-white" : "border-editorial-border hover:bg-black/5")
             )}
           >
-            <Users size={14} className="inline mr-2" /> Gebruikers
+            <Users size={14} className="inline mr-2" /> {t('admin.users')}
           </button>
           <button 
             onClick={() => setView('activities')}
@@ -154,14 +156,14 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
                 : (isDarkMode ? "bg-zinc-900 border-zinc-800 text-white/40 hover:text-white" : "border-editorial-border hover:bg-black/5")
             )}
           >
-            <ActivityIcon size={14} className="inline mr-2" /> Activiteiten
+            <ActivityIcon size={14} className="inline mr-2" /> {t('admin.activities')}
           </button>
         </div>
       </div>
 
       <div className={cn("border shadow-sm overflow-hidden", isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-editorial-border")}>
         {loading ? (
-          <div className="p-20 text-center italic text-black/30">Laden...</div>
+          <div className="p-20 text-center italic text-black/30">{t('admin.loading') || 'Laden...'}</div>
         ) : view === 'users' ? (
           <div className={cn("divide-y", isDarkMode ? "divide-zinc-800" : "divide-editorial-border")}>
             {users.map(u => (
@@ -181,7 +183,7 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
                       "p-3 transition-all border border-transparent hover:border-red-500 hover:text-red-500",
                       isDarkMode ? "text-white/10" : "text-black/20"
                     )}
-                    title="Verwijder Gebruiker"
+                    title={t('admin.deleteUserTooltip') || "Verwijder Gebruiker"}
                   >
                     <Trash2 size={18} />
                   </button>
@@ -199,12 +201,16 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
                     <p className="text-xs">
                       <span className={cn("font-bold", isDarkMode ? "text-white" : "text-editorial-text")}>{a.userName}</span> 
                       <span className={cn("mx-2 opacity-50", isDarkMode ? "text-white/20" : "text-black/40")}>→</span>
-                      <span className={cn("italic font-serif", isDarkMode ? "text-white/60" : "text-black/40")}>{a.type}</span>
+                      <span className={cn("italic font-serif", isDarkMode ? "text-white/60" : "text-black/40")}>
+                        {a.type === 'is begonnen met' ? t('social.activities.started') :
+                         a.type === 'heeft' ? t('social.activities.finished') :
+                         a.type === 'beoordeelde' ? t('social.activities.rated') : a.type}
+                      </span>
                       <span className={cn("mx-2 opacity-50", isDarkMode ? "text-white/20" : "text-black/40")}>→</span>
                       <span className={cn("font-bold uppercase tracking-tight text-[10px]", isDarkMode ? "text-white/80" : "text-editorial-text")}>{a.bookTitle}</span>
                     </p>
                     <p className={cn("text-[10px] mt-1 uppercase font-bold tracking-widest", isDarkMode ? "text-white/40" : "text-black/40")}>
-                      {a.createdAt?.toDate ? a.createdAt.toDate().toLocaleString() : 'Recent'}
+                      {a.createdAt?.toDate ? a.createdAt.toDate().toLocaleString() : (t('admin.recent') || 'Recent')}
                     </p>
                   </div>
                 </div>
@@ -214,14 +220,14 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
                     "p-3 transition-all border border-transparent hover:border-red-500 hover:text-red-500",
                     isDarkMode ? "text-white/10" : "text-black/20"
                   )}
-                  title="Verwijder Activiteit"
+                  title={t('admin.deleteActivityTooltip') || "Verwijder Activiteit"}
                 >
                   <Trash2 size={18} />
                 </button>
               </div>
             ))}
             {activities.length === 0 && (
-              <div className="p-20 text-center italic text-black/30">Geen activiteiten gevonden.</div>
+              <div className="p-20 text-center italic text-black/30">{t('admin.noActivities') || 'Geen activiteiten gevonden.'}</div>
             )}
           </div>
         )}
@@ -230,10 +236,9 @@ export default function AdminDashboard({ isDarkMode }: { isDarkMode?: boolean })
       <div className={cn("p-6 flex items-start gap-4 border", isDarkMode ? "bg-red-950/20 border-red-900/50" : "bg-red-50 border-red-100")}>
         <ShieldAlert className="text-red-500 shrink-0" size={20} />
         <div className="space-y-1">
-          <p className={cn("text-xs font-bold uppercase tracking-widest", isDarkMode ? "text-red-400" : "text-red-900")}>Pas op: Administratieve Bevoegdheden</p>
+          <p className={cn("text-xs font-bold uppercase tracking-widest", isDarkMode ? "text-red-400" : "text-red-900")}>{t('admin.warningTitle') || 'Pas op: Administratieve Bevoegdheden'}</p>
           <p className={cn("text-[10px] leading-relaxed font-serif italic", isDarkMode ? "text-red-400" : "text-red-700")}>
-            Als administrator heb je de mogelijkheid om gegevens definitief te verwijderen uit de database. 
-            Deze acties zijn onomkeerbaar en hebben direct effect op alle gebruikers.
+            {t('admin.warningDesc') || 'Als administrator heb je de mogelijkheid om gegevens definitief te verwijderen uit de database. Deze acties zijn onomkeerbaar en hebben direct effect op alle gebruikers.'}
           </p>
         </div>
       </div>

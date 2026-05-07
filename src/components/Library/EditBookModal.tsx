@@ -5,6 +5,8 @@ import { cn } from '../../lib/utils';
 import { Book, bookService } from '../../services/bookService';
 import { socialService } from '../../services/socialService';
 import { auth } from '../../lib/firebase';
+import { useLanguage } from '../../lib/LanguageContext';
+import { translateStatus } from '../../translations';
 
 interface EditBookModalProps {
   book: Book;
@@ -15,6 +17,7 @@ interface EditBookModalProps {
 }
 
 export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, isDarkMode }: EditBookModalProps) {
+  const { t, language } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -56,6 +59,25 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
     if (!cleanData.isbn) cleanData.isbn = '';
     if (!cleanData.storageUrl) cleanData.storageUrl = '';
 
+    // Handle status transitions
+    if (cleanData.readingStatus === 'Bezig' && book.readingStatus !== 'Bezig' && !book.startDate) {
+      cleanData.startDate = new Date().toISOString();
+    }
+    if (cleanData.readingStatus === 'Gelezen' && book.readingStatus !== 'Gelezen' && !book.endDate) {
+      cleanData.endDate = new Date().toISOString();
+      
+      // Calculate stats if finishing
+      const startDateStr = cleanData.startDate || book.startDate;
+      if (startDateStr && book.pageCount) {
+         const end = new Date();
+         const start = new Date(startDateStr);
+         const diffTime = Math.abs(end.getTime() - start.getTime());
+         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+         cleanData.readingDuration = diffDays;
+         cleanData.pagesPerDay = parseFloat((book.pageCount / diffDays).toFixed(1));
+      }
+    }
+
     try {
       await bookService.updateBook(book.id!, cleanData);
       
@@ -64,7 +86,7 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
         if (cleanData.rating) {
            await socialService.logActivity({
             userId: auth.currentUser.uid,
-            userName: auth.currentUser.displayName || 'Gebruiker',
+            userName: auth.currentUser.displayName || (language === 'nl' ? 'Gebruiker' : 'User'),
             userPhoto: auth.currentUser.photoURL || '',
             type: 'RATE_BOOK',
             bookId: book.id!,
@@ -82,9 +104,9 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
       console.error('Failed to update book:', err);
       try {
         const firestoreError = JSON.parse(err.message);
-        setError(`Fout: ${firestoreError.error}`);
+        setError(`${t('common.error') || 'Fout'}: ${firestoreError.error}`);
       } catch {
-        setError('Het boek kon niet worden bijgewerkt.');
+        setError(t('library.updateFailed') || 'Het boek kon niet worden bijgewerkt.');
       }
     } finally {
       setIsSubmitting(false);
@@ -105,7 +127,7 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
         )}
       >
         <div className={cn("p-6 border-b flex items-center justify-between transition-colors", isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border text-editorial-text")}>
-          <h2 className="text-xl font-serif italic tracking-tight font-bold">Boek Bewerken</h2>
+          <h2 className="text-xl font-serif italic tracking-tight font-bold">{t('library.editBook') || 'Boek Bewerken'}</h2>
           <button onClick={onClose} className="p-2 hover:text-editorial-accent transition-colors">
             <X size={20} />
           </button>
@@ -132,7 +154,7 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
                     )}
                   </div>
                   <div className="space-y-1">
-                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Cover URL</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.coverUrl') || 'Cover URL'}</label>
                     <input 
                       type="text" 
                       value={formData.coverUrl}
@@ -149,7 +171,7 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
                <div className="col-span-8 space-y-8">
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Titel *</label>
+                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.titleLabel') || 'Titel *'}</label>
                       <input 
                         required
                         type="text" 
@@ -162,7 +184,7 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
                       />
                     </div>
                       <div className="space-y-2">
-                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Auteurs *</label>
+                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.authorsLabel') || 'Auteurs *'}</label>
                         <input 
                           required
                           type="text" 
@@ -176,7 +198,7 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
                       </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Serie</label>
+                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.seriesLabel') || 'Serie'}</label>
                         <input 
                           type="text" 
                           value={formData.series || ''}
@@ -188,7 +210,7 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Deel #</label>
+                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.volumeLabel') || 'Deel #'}</label>
                         <input 
                           type="number" 
                           value={formData.seriesIndex || ''}
@@ -204,71 +226,71 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
                </div>
             </div>
 
-            <div className={cn("grid grid-cols-2 gap-12 pt-8 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-              <div className="space-y-6">
-                <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">Bibliografisch</h5>
-                <div className="space-y-2">
-                  <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>ISBN</label>
-                  <input 
-                    type="text" 
-                    value={formData.isbn || ''}
-                    onChange={(e) => setFormData({...formData, isbn: e.target.value})}
-                    className={cn(
-                      "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent transition-colors",
-                      isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Genre</label>
-                  <input 
-                    type="text" 
-                    value={genresInput}
-                    onChange={(e) => setGenresInput(e.target.value)}
-                    className={cn(
-                      "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent transition-colors",
-                      isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">Status & Omvang</h5>
-                <div className="grid grid-cols-2 gap-4">
+              <div className={cn("grid grid-cols-2 gap-12 pt-8 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
+                <div className="space-y-6">
+                  <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">{t('library.bibliographic') || 'Bibliografisch'}</h5>
                   <div className="space-y-2">
-                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Status</label>
-                    <select 
-                      value={formData.readingStatus}
-                      onChange={(e) => setFormData({...formData, readingStatus: e.target.value as any})}
-                      className={cn(
-                        "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent appearance-none cursor-pointer transition-colors",
-                        isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
-                      )}
-                    >
-                      <option>Ongelezen</option>
-                      <option>Bezig</option>
-                      <option>Gelezen</option>
-                      <option>Wil ik lezen</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Pagina's</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.isbn') || 'ISBN'}</label>
                     <input 
-                      type="number" 
-                      value={formData.pageCount || ''}
-                      onChange={(e) => setFormData({...formData, pageCount: parseInt(e.target.value)})}
+                      type="text" 
+                      value={formData.isbn || ''}
+                      onChange={(e) => setFormData({...formData, isbn: e.target.value})}
                       className={cn(
                         "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent transition-colors",
-                        isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border"
+                        isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
                       )}
-                      placeholder="bijv. 350"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.genre') || 'Genre'}</label>
+                    <input 
+                      type="text" 
+                      value={genresInput}
+                      onChange={(e) => setGenresInput(e.target.value)}
+                      className={cn(
+                        "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent transition-colors",
+                        isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
+                      )}
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Mijn Waardering</label>
-                  <div className="flex gap-2">
+
+                <div className="space-y-6">
+                  <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">{t('library.statusAndScale') || 'Status & Omvang'}</h5>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.readingStatus') || 'Status'}</label>
+                      <select 
+                        value={formData.readingStatus}
+                        onChange={(e) => setFormData({...formData, readingStatus: e.target.value as any})}
+                        className={cn(
+                          "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent appearance-none cursor-pointer transition-colors",
+                          isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
+                        )}
+                      >
+                        <option value="Ongelezen">{translateStatus('Ongelezen', language)}</option>
+                        <option value="Bezig">{translateStatus('Bezig', language)}</option>
+                        <option value="Gelezen">{translateStatus('Gelezen', language)}</option>
+                        <option value="Wil ik lezen">{translateStatus('Wil ik lezen', language)}</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.pages') || 'Pagina\'s'}</label>
+                      <input 
+                        type="number" 
+                        value={formData.pageCount || ''}
+                        onChange={(e) => setFormData({...formData, pageCount: parseInt(e.target.value)})}
+                        className={cn(
+                          "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent transition-colors",
+                          isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border"
+                        )}
+                        placeholder={language === 'nl' ? 'bijv. 350' : 'e.g. 350'}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.myRating') || 'Mijn Waardering'}</label>
+                    <div className="flex gap-2">
                      {[1, 2, 3, 4, 5].map(star => (
                        <button 
                          key={star}
@@ -288,10 +310,10 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
             </div>
 
             <div className={cn("space-y-6 pt-8 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-              <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">Bestand & Opslag</h5>
+              <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">{t('library.fileAndStorage') || 'Bestand & Opslag'}</h5>
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-3 space-y-2">
-                  <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic flex items-center gap-2", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}><FileType size={10} /> Formaat</label>
+                  <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic flex items-center gap-2", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}><FileType size={10} /> {t('library.format') || 'Formaat'}</label>
                   <select 
                     value={formData.format}
                     onChange={(e) => setFormData({...formData, format: e.target.value})}
@@ -303,12 +325,12 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
                     <option>epub</option>
                     <option>pdf</option>
                     <option>mobi</option>
-                    <option>fysiek</option>
-                    <option>overig</option>
+                    <option value="fysiek">{language === 'nl' ? 'fysiek' : 'physical'}</option>
+                    <option value="overig">{language === 'nl' ? 'overig' : 'other'}</option>
                   </select>
                 </div>
                 <div className="col-span-9 space-y-2">
-                  <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic flex items-center gap-2", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}><Link size={10} /> Opslaglink</label>
+                  <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic flex items-center gap-2", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}><Link size={10} /> {t('library.storageLink') || 'Opslaglink'}</label>
                   <input 
                     type="text" 
                     value={formData.storageUrl || ''}
@@ -323,7 +345,7 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
             </div>
 
             <div className={cn("space-y-6 pt-8 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-              <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Notities</label>
+              <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.notes') || 'Notities'}</label>
               <textarea 
                 value={formData.notes || ''}
                 onChange={(e) => setFormData({...formData, notes: e.target.value})}
@@ -331,7 +353,7 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
                   "w-full px-4 py-3 rounded-none border text-sm focus:outline-none focus:border-editorial-accent min-h-[120px] font-serif italic transition-colors",
                   isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-black"
                 )}
-                placeholder="Schrijf hier je gedachten over dit boek..."
+                placeholder={t('library.notesPlaceholder') || "Schrijf hier je gedachten over dit boek..."}
               />
             </div>
 
@@ -344,8 +366,8 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
                   isDarkMode ? "bg-white text-zinc-900 hover:bg-neutral-200" : "bg-editorial-text text-white hover:bg-neutral-800"
                 )}
               >
-                {isSubmitting && <Loader2 size={14} className="animate-spin" />}
-                {isSubmitting ? "Bezig..." : "Wijzigingen Opslaan"}
+                {isSubmitting && <Loader2 size={14} className="animate-spin text-white" />}
+                {isSubmitting ? (t('library.saving') || "Bezig...") : (t('library.saveChanges') || "Wijzigingen Opslaan")}
               </button>
             </div>
           </form>

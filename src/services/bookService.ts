@@ -11,7 +11,8 @@ import {
   limit,
   serverTimestamp,
   Timestamp,
-  getDocFromServer
+  getDocFromServer,
+  onSnapshot
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/error-handler';
@@ -217,5 +218,23 @@ export const bookService = {
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, COLLECTION_NAME);
     }
+  },
+
+  onBooksUpdate(callback: (books: Book[]) => void) {
+    const user = auth.currentUser;
+    if (!user) return () => {};
+
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('userId', '==', user.uid),
+      orderBy('dateAdded', 'desc')
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      const books = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Book));
+      callback(books);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, COLLECTION_NAME);
+    });
   }
 };

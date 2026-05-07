@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { metadataService, ExternalBook } from '../../services/metadataService';
 import { Book, bookService } from '../../services/bookService';
+import { useLanguage } from '../../lib/LanguageContext';
+import { translateStatus } from '../../translations';
 
 interface AddBookModalProps {
   isOpen: boolean;
@@ -13,6 +15,7 @@ interface AddBookModalProps {
 }
 
 export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode }: AddBookModalProps) {
+  const { t, language } = useLanguage();
   const [step, setStep] = useState<'search' | 'form'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ExternalBook[]>([]);
@@ -43,7 +46,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
       setSearchResults(results);
     } catch (err) {
       console.error('Search error:', err);
-      setError('Zoeken mislukt. Probeer het later opnieuw.');
+      setError(t('library.searchFailed') || 'Zoeken mislukt. Probeer het later opnieuw.');
     } finally {
       setIsSearching(false);
     }
@@ -104,10 +107,12 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
     }
 
     if (!cleanData.series) delete cleanData.series;
-    if (!cleanData.isbn) delete cleanData.isbn;
-    if (!cleanData.storageUrl) delete cleanData.storageUrl;
-
-    console.log('Adding book with data:', cleanData);
+    // Set dates based on status
+    if (cleanData.readingStatus === 'Bezig') {
+      cleanData.startDate = new Date().toISOString();
+    } else if (cleanData.readingStatus === 'Gelezen') {
+      cleanData.endDate = new Date().toISOString();
+    }
 
     try {
       await bookService.addBook(cleanData as any);
@@ -121,9 +126,9 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
       console.error('Failed to add book:', err);
       try {
         const firestoreError = JSON.parse(err.message);
-        setError(`Fout: ${firestoreError.error}`);
+        setError(`${t('common.error') || 'Fout'}: ${firestoreError.error}`);
       } catch {
-        setError('Het boek kon niet worden toegevoegd. Controleer de velden.');
+        setError(t('library.addFailed') || 'Het boek kon niet worden toegevoegd. Controleer de velden.');
       }
     } finally {
       setIsSubmitting(false);
@@ -144,7 +149,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
         )}
       >
         <div className={cn("p-6 border-b flex items-center justify-between transition-colors", isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border text-editorial-text")}>
-          <h2 className="text-xl font-serif italic tracking-tight font-bold">Nieuw Boek Toevoegen</h2>
+          <h2 className="text-xl font-serif italic tracking-tight font-bold">{t('library.addBook') || 'Nieuw Boek Toevoegen'}</h2>
           <button onClick={onClose} className="p-2 hover:text-editorial-accent transition-colors">
             <X size={20} />
           </button>
@@ -154,14 +159,14 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
           {step === 'search' ? (
             <div className="space-y-10">
               <div className="text-center max-w-md mx-auto">
-                <p className={cn("mb-8 font-serif italic", isDarkMode ? "text-zinc-600" : "text-editorial-text/50")}>Zoek een boek om metadata automatisch op te halen.</p>
+                <p className={cn("mb-8 font-serif italic", isDarkMode ? "text-zinc-600" : "text-editorial-text/50")}>{t('library.searchMetadataDesc') || 'Zoek een boek om metadata automatisch op te halen.'}</p>
                 <form onSubmit={handleSearch} className="relative">
                   <Search className={cn("absolute left-4 top-1/2 -translate-y-1/2", isDarkMode ? "text-zinc-800" : "text-editorial-text/30")} size={18} />
                   <input 
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Titel, auteur of ISBN..."
+                    placeholder={t('library.searchBookPlaceholder') || "Titel, auteur of ISBN..."}
                     className={cn(
                       "w-full pl-12 pr-28 py-4 rounded-none border focus:outline-none transition-all text-base",
                       isDarkMode ? "bg-zinc-900 border-zinc-800 text-white focus:border-editorial-accent placeholder:text-zinc-800" : "bg-white border-editorial-border focus:border-editorial-text"
@@ -175,7 +180,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                       isDarkMode ? "bg-white text-zinc-950 hover:bg-neutral-200 disabled:bg-zinc-800" : "bg-editorial-text text-white hover:bg-neutral-800 disabled:bg-neutral-200"
                     )}
                   >
-                    {isSearching ? <Loader2 size={16} className="animate-spin" /> : "Zoek"}
+                    {isSearching ? <Loader2 size={16} className="animate-spin" /> : (t('common.search') || "Zoek")}
                   </button>
                 </form>
               </div>
@@ -219,7 +224,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
 
                 {searchQuery && !isSearching && searchResults.length === 0 && (
                    <div className={cn("text-center py-12 border border-dashed font-serif italic", isDarkMode ? "border-zinc-800 text-zinc-800" : "border-editorial-border text-editorial-text/40")}>
-                     Geen resultaten voor "{searchQuery}".
+                     {(t('library.noResultsFor') || 'Geen resultaten voor "{query}".').replace('{query}', searchQuery)}
                    </div>
                 )}
 
@@ -228,7 +233,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                     onClick={skipSearch}
                     className={cn("text-[10px] font-bold uppercase tracking-[0.2em] transition-colors italic", isDarkMode ? "text-zinc-800 hover:text-zinc-600" : "text-editorial-text/40 hover:text-editorial-accent")}
                   >
-                    Handmatig invoeren →
+                    {t('library.manualEntry') || 'Handmatig invoeren →'}
                   </button>
                 </div>
               </div>
@@ -243,12 +248,12 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                       ) : (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-neutral-300 p-6 text-center">
                            <BookIcon size={32} className="mb-2 opacity-20" />
-                           <span className="text-[10px] uppercase font-bold tracking-widest opacity-40">Geen Cover</span>
+                           <span className="text-[10px] uppercase font-bold tracking-widest opacity-40">{t('library.noCover') || 'Geen Cover'}</span>
                         </div>
                       )}
                     </div>
                     <div className="space-y-1">
-                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Cover URL</label>
+                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.coverUrl') || 'Cover URL'}</label>
                       <input 
                         type="text" 
                         value={formData.coverUrl}
@@ -265,7 +270,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                  <div className="col-span-8 space-y-8">
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Titel *</label>
+                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.titleLabel') || 'Titel *'}</label>
                         <input 
                           required
                           type="text" 
@@ -279,7 +284,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Auteurs *</label>
+                        <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.authorsLabel') || 'Auteurs *'}</label>
                         <input 
                           required
                           type="text" 
@@ -289,12 +294,12 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                             "w-full px-4 py-3 rounded-none border focus:outline-none focus:border-editorial-accent transition-colors text-sm",
                             isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-editorial-text"
                           )}
-                          placeholder="Bijv. Andy Weir"
+                          placeholder={language === 'nl' ? 'Bijv. Andy Weir' : 'e.g. Andy Weir'}
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Serie</label>
+                          <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.seriesLabel') || 'Serie'}</label>
                           <input 
                             type="text" 
                             value={formData.series || ''}
@@ -306,7 +311,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Deel #</label>
+                          <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.volumeLabel') || 'Deel #'}</label>
                           <input 
                             type="number" 
                             value={formData.seriesIndex || ''}
@@ -324,9 +329,9 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
 
               <div className={cn("grid grid-cols-2 gap-12 pt-8 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
                 <div className="space-y-6">
-                  <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">Bibliografisch</h5>
+                  <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">{t('library.bibliographic') || 'Bibliografisch'}</h5>
                   <div className="space-y-2">
-                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>ISBN</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.isbn') || 'ISBN'}</label>
                     <input 
                       type="text" 
                       value={formData.isbn || ''}
@@ -338,7 +343,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Genre</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.genre') || 'Genre'}</label>
                     <input 
                       type="text" 
                       value={genresInput}
@@ -352,10 +357,10 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                 </div>
 
                 <div className="space-y-6">
-                  <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">Status & Omvang</h5>
+                  <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">{t('library.statusAndScale') || 'Status & Omvang'}</h5>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Status</label>
+                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.readingStatus') || 'Status'}</label>
                       <select 
                         value={formData.readingStatus}
                         onChange={(e) => setFormData({...formData, readingStatus: e.target.value as any})}
@@ -364,14 +369,14 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                           isDarkMode ? "bg-zinc-900 border-zinc-800 text-white" : "bg-white border-editorial-border"
                         )}
                       >
-                        <option>Ongelezen</option>
-                        <option>Bezig</option>
-                        <option>Gelezen</option>
-                        <option>Wil ik lezen</option>
+                        <option value="Ongelezen">{translateStatus('Ongelezen', language)}</option>
+                        <option value="Bezig">{translateStatus('Bezig', language)}</option>
+                        <option value="Gelezen">{translateStatus('Gelezen', language)}</option>
+                        <option value="Wil ik lezen">{translateStatus('Wil ik lezen', language)}</option>
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Pagina's</label>
+                      <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.pages') || 'Pagina\'s'}</label>
                       <input 
                         type="number" 
                         value={formData.pageCount || ''}
@@ -380,12 +385,12 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                           "w-full px-4 py-2 rounded-none border text-xs focus:outline-none focus:border-editorial-accent transition-colors",
                           isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border"
                         )}
-                        placeholder="bijv. 350"
+                        placeholder={(language === 'nl' ? 'bijv. 350' : 'e.g. 350')}
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>Mijn Waardering</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.myRating') || 'Mijn Waardering'}</label>
                     <div className="flex gap-2">
                        {[1, 2, 3, 4, 5].map(star => (
                          <button 
@@ -406,10 +411,10 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
               </div>
 
               <div className={cn("space-y-6 pt-8 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-                <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">Bestand & Opslag</h5>
+                <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-accent italic">{t('library.fileAndStorage') || 'Bestand & Opslag'}</h5>
                 <div className="grid grid-cols-12 gap-6">
                   <div className="col-span-3 space-y-2">
-                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic flex items-center gap-2", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}><FileType size={10} /> Formaat</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic flex items-center gap-2", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}><FileType size={10} /> {t('library.format') || 'Formaat'}</label>
                     <select 
                       value={formData.format}
                       onChange={(e) => setFormData({...formData, format: e.target.value})}
@@ -421,12 +426,12 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                       <option>epub</option>
                       <option>pdf</option>
                       <option>mobi</option>
-                      <option>fysiek</option>
-                      <option>overig</option>
+                      <option value="fysiek">{language === 'nl' ? 'fysiek' : 'physical'}</option>
+                      <option value="overig">{language === 'nl' ? 'overig' : 'other'}</option>
                     </select>
                   </div>
                   <div className="col-span-9 space-y-2">
-                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic flex items-center gap-2", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}><Link size={10} /> Opslaglink</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic flex items-center gap-2", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}><Link size={10} /> {t('library.storageLink') || 'Opslaglink'}</label>
                     <input 
                       type="text" 
                       value={formData.storageUrl || ''}
@@ -454,7 +459,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                     onClick={() => setStep('search')}
                     className={cn("text-[10px] font-bold uppercase tracking-[0.15em] transition-colors italic disabled:opacity-50", isDarkMode ? "text-zinc-800 hover:text-zinc-600" : "text-editorial-text/40 hover:text-editorial-text")}
                   >
-                    ← Metadata Zoeken
+                    {t('library.backToSearch') || '← Metadata Zoeken'}
                   </button>
                   <button 
                     type="submit"
@@ -465,7 +470,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded, isDarkMode 
                     )}
                   >
                     {isSubmitting && <Loader2 size={14} className="animate-spin text-white" />}
-                    {isSubmitting ? "Bezig..." : "Boek Toevoegen"}
+                    {isSubmitting ? (t('library.saving') || "Bezig...") : (t('library.addBook') || "Boek Toevoegen")}
                   </button>
                 </div>
             </form>

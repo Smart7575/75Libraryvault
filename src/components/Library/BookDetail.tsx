@@ -25,10 +25,12 @@ import { socialService } from '../../services/socialService';
 import { auth } from '../../lib/firebase';
 import { cn } from '../../lib/utils';
 import { format } from 'date-fns';
-import { nl } from 'date-fns/locale';
+import { nl, enUS } from 'date-fns/locale';
 import EditBookModal from './EditBookModal';
 import ShareBookModal from './ShareBookModal';
 import PushBookModal from './PushBookModal';
+import { useLanguage } from '../../lib/LanguageContext';
+import { translateStatus } from '../../translations';
 
 interface BookDetailProps {
   book: Book;
@@ -38,6 +40,7 @@ interface BookDetailProps {
 }
 
 export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: BookDetailProps) {
+  const { t, language } = useLanguage();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -58,7 +61,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
       onUpdate(); // To refresh user's book count etc if needed
     } catch (err: any) {
       console.error('Copy book error:', err);
-      setError('Kopiëren mislukt.');
+      setError(t('library.copyFailed') || 'Kopiëren mislukt.');
     } finally {
       setIsBusy(false);
     }
@@ -78,7 +81,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
         // Log activity
         await socialService.logActivity({
           userId: auth.currentUser.uid,
-          userName: auth.currentUser.displayName || 'Gebruiker',
+          userName: auth.currentUser.displayName || (t('common.user') || 'User'),
           userPhoto: auth.currentUser.photoURL || '',
           type: 'START_READING',
           bookId: book.id!,
@@ -124,7 +127,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
         // Log activity
         await socialService.logActivity({
           userId: auth.currentUser.uid,
-          userName: auth.currentUser.displayName || 'Gebruiker',
+          userName: auth.currentUser.displayName || (t('common.user') || 'User'),
           userPhoto: auth.currentUser.photoURL || '',
           type: 'FINISH_READING',
           bookId: book.id!,
@@ -141,7 +144,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
   };
 
   const handleDelete = async () => {
-    if (confirm('Weet je zeker dat je dit boek wilt verwijderen?')) {
+    if (confirm(t('library.deleteConfirm') || 'Weet je zeker dat je dit boek wilt verwijderen?')) {
       setIsDeleting(true);
       setError(null);
       try {
@@ -152,9 +155,9 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
         console.error('Delete error:', err);
         try {
           const firestoreError = JSON.parse(err.message);
-          setError(`Verwijderen mislukt: ${firestoreError.error}`);
+          setError(`${t('library.deleteFailed') || 'Verwijderen mislukt:'} ${firestoreError.error}`);
         } catch {
-          setError('Boek kon niet worden verwijderd.');
+          setError(t('library.bookNotFound') || 'Boek kon niet worden verwijderd.');
         }
         setIsDeleting(false);
       }
@@ -165,7 +168,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
     if (url.includes('onedrive')) return 'OneDrive';
     if (url.includes('google')) return 'Google Drive';
     if (url.includes('dropbox')) return 'Dropbox';
-    return 'Opslag';
+    return t('library.storage') || 'Opslag';
   };
 
   return (
@@ -223,7 +226,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                    book.readingStatus === 'Wil ik lezen' ? (isDarkMode ? "text-orange-500 bg-orange-500/10" : "text-orange-700 bg-orange-50/50") :
                    (isDarkMode ? "text-zinc-600 border-zinc-800" : "text-black/30 bg-neutral-50")
                  )}>
-                   {book.readingStatus}
+                   {translateStatus(book.readingStatus, language)}
                  </span>
                  {book.series && (
                    <span className={cn("text-[10px] font-bold uppercase tracking-[0.15em] italic", isDarkMode ? "text-zinc-500" : "text-editorial-text/40")}>
@@ -243,7 +246,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                       "p-3 border transition-all",
                       isDarkMode ? "border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-400" : "border-editorial-border text-editorial-text/30 hover:text-editorial-text hover:border-editorial-text"
                     )}
-                    title="Bewerken"
+                    title={t('library.editTooltip') || "Bewerken"}
                   >
                     <Edit3 size={20} />
                   </button>
@@ -253,7 +256,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                       "p-3 border transition-all",
                       isDarkMode ? "border-zinc-800 text-zinc-500 hover:text-editorial-accent-bright hover:border-editorial-accent-bright" : "border-editorial-border text-editorial-text/30 hover:text-editorial-accent hover:border-editorial-accent"
                     )}
-                    title="Push naar volger"
+                    title={t('library.pushTooltip') || "Push naar volger"}
                   >
                     <ArrowUpCircle size={20} />
                   </button>
@@ -264,7 +267,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                       "p-3 border transition-all",
                       isDarkMode ? "border-zinc-800 text-zinc-500 hover:text-red-500 hover:border-red-500" : "border-editorial-border text-editorial-text/30 hover:text-red-600 hover:border-red-600"
                     )}
-                    title="Verwijderen"
+                    title={t('library.deleteTooltip') || "Verwijderen"}
                   >
                     <Trash2 size={20} />
                   </button>
@@ -281,7 +284,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                   )}
                 >
                   {copySuccess ? <Check size={14} /> : <BookOpen size={14} />}
-                  {copySuccess ? 'Toegevoegd aan collectie' : 'Kopieer naar mijn collectie'}
+                  {copySuccess ? (t('library.addedToCollection') || 'Toegevoegd aan collectie') : (t('library.copyToCollection') || 'Kopieer naar mijn collectie')}
                 </button>
               )}
             </div>
@@ -305,7 +308,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                   );
                 })
               ) : (
-                <span className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-zinc-700" : "text-black/20")}>Geen waardering</span>
+                <span className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-zinc-700" : "text-black/20")}>{t('library.noRating') || 'Geen waardering'}</span>
               )}
             </div>
 
@@ -316,7 +319,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                   disabled={isBusy}
                   className="bg-editorial-text text-white px-6 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-neutral-800 transition-all flex items-center gap-2"
                 >
-                  <BookOpen size={14} /> Start met lezen
+                  <BookOpen size={14} /> {t('library.startReading') || 'Start met lezen'}
                 </button>
               ) : isOwner && book.readingStatus === 'Bezig' ? (
                 <button 
@@ -324,7 +327,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                   disabled={isBusy}
                   className="bg-green-700 text-white px-6 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-green-800 transition-all flex items-center gap-2"
                 >
-                  <Check size={14} /> Markeer als uitgelezen
+                  <Check size={14} /> {t('library.finishReading') || 'Markeer als uitgelezen'}
                 </button>
               ) : null}
             </div>
@@ -332,26 +335,26 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
 
           <div className="grid grid-cols-2 gap-16 mb-16">
             <div className="space-y-8">
-              <DetailItem icon={<Info size={14} />} label="ISBN" value={book.isbn || 'N/A'} isDarkMode={isDarkMode} />
-              <DetailItem icon={<Calendar size={14} />} label="Editie / Datum" value={book.publishedDate || 'N/A'} isDarkMode={isDarkMode} />
-              <DetailItem icon={<Tag size={14} />} label="Categorisatie" value={book.genre.join(', ') || 'N/A'} isDarkMode={isDarkMode} />
+              <DetailItem icon={<Info size={14} />} label={t('library.isbn') || "ISBN"} value={book.isbn || 'N/A'} isDarkMode={isDarkMode} />
+              <DetailItem icon={<Calendar size={14} />} label={t('library.editionDate') || "Editie / Datum"} value={book.publishedDate || 'N/A'} isDarkMode={isDarkMode} />
+              <DetailItem icon={<Tag size={14} />} label={t('library.categorization') || "Categorisatie"} value={book.genre.join(', ') || 'N/A'} isDarkMode={isDarkMode} />
             </div>
             <div className="space-y-8">
-              <DetailItem icon={<Clock size={14} />} label="Gearchiveerd op" value={book.dateAdded ? format(book.dateAdded.toDate(), 'd MMMM yyyy', { locale: nl }) : '-'} isDarkMode={isDarkMode} />
+              <DetailItem icon={<Clock size={14} />} label={t('library.archivedOn') || "Gearchiveerd op"} value={book.dateAdded ? format(book.dateAdded.toDate(), 'd MMMM yyyy', { locale: language === 'nl' ? nl : enUS }) : '-'} isDarkMode={isDarkMode} />
               {book.readingStatus === 'Gelezen' && book.endDate && (
                 <div className={cn("pt-4 border-t space-y-4", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
                   <div className="flex justify-between items-center">
-                    <span className={cn("text-[10px] font-bold uppercase italic", isDarkMode ? "text-zinc-500" : "text-black/40")}>Leestijd</span>
-                    <span className="text-sm font-bold">{book.readingDuration} dagen</span>
+                    <span className={cn("text-[10px] font-bold uppercase italic", isDarkMode ? "text-zinc-500" : "text-black/40")}>{t('library.readingTime') || 'Leestijd'}</span>
+                    <span className="text-sm font-bold">{book.readingDuration} {t('library.days') || 'dagen'}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className={cn("text-[10px] font-bold uppercase italic", isDarkMode ? "text-zinc-500" : "text-black/40")}>Gemiddelde</span>
-                    <span className="text-sm font-bold">{book.pagesPerDay} pag/dag</span>
+                    <span className={cn("text-[10px] font-bold uppercase italic", isDarkMode ? "text-zinc-500" : "text-black/40")}>{t('library.average') || 'Gemiddelde'}</span>
+                    <span className="text-sm font-bold">{book.pagesPerDay} {t('library.pagesPerDayLabel') || 'pag/dag'}</span>
                   </div>
                 </div>
               )}                  <div className="flex items-center gap-3 pt-4">
                   <div className="flex flex-col gap-3">
-                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] italic", isDarkMode ? "text-zinc-500" : "text-editorial-text/40")}>Digitale Toegang</label>
+                    <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] italic", isDarkMode ? "text-zinc-500" : "text-editorial-text/40")}>{t('library.digitalAccess') || 'Digitale Toegang'}</label>
                     {book.storageUrl ? (
                       <div className="flex gap-4 items-center">
                         <a 
@@ -364,7 +367,7 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                           )}
                         >
                           <ExternalLink size={14} />
-                          Open in {getPlatformIcon(book.storageUrl)}
+                          {t('library.openIn') || 'Open in'} {getPlatformIcon(book.storageUrl)}
                         </a>
                         {isOwner && (
                           <button 
@@ -373,15 +376,15 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
                               "border p-4 transition-all shadow-md flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest",
                               isDarkMode ? "bg-zinc-800 border-zinc-700 text-zinc-300 hover:text-editorial-accent hover:border-editorial-accent" : "bg-white border-editorial-border text-editorial-text hover:text-editorial-accent hover:border-editorial-accent"
                             )}
-                            title="Deel locatie via chat"
+                            title={t('library.shareTooltip') || "Deel locatie via chat"}
                           >
                             <Send size={14} />
-                            Deel
+                            {t('library.share') || 'Deel'}
                           </button>
                         )}
                       </div>
                     ) : (
-                      <span className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-zinc-700" : "text-black/20")}>Geen digitale link</span>
+                      <span className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-zinc-700" : "text-black/20")}>{t('library.noDigitalLink') || 'Geen digitale link'}</span>
                     )}
                   </div>
                  </div>
@@ -390,21 +393,21 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
 
           <div className="space-y-4 flex-1">
              <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] italic", isDarkMode ? "text-zinc-500" : "text-editorial-text/40")}>
-               {isOwner ? 'Persoonlijke Annotaties' : `Beschrijving`}
+               {isOwner ? (t('library.personalNotes') || 'Persoonlijke Annotaties') : (t('library.description') || `Beschrijving`)}
              </label>
              <div className={cn(
                "p-10 border min-h-[180px] leading-relaxed font-serif italic text-lg whitespace-pre-wrap transition-colors",
                isDarkMode ? "bg-zinc-950/50 border-zinc-800 text-zinc-400" : "bg-editorial-bg/50 border-editorial-border text-editorial-text/70"
              )}>
-               {isOwner ? (book.notes || 'Er zijn nog geen notities voor dit exemplaar.') : (book.description || 'Geen beschrijving beschikbaar.')}
+               {isOwner ? (book.notes || (t('library.noNotes') || 'Er zijn nog geen notities voor dit exemplaar.')) : (book.description || (t('library.noDescription') || 'Geen beschrijving beschikbaar.'))}
              </div>
           </div>
 
           <div className={cn("mt-16 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] pt-8 border-t italic transition-colors", isDarkMode ? "text-zinc-700 border-zinc-800" : "text-editorial-text/30 border-editorial-border")}>
              <div className="flex items-center gap-3">
-               <Smartphone size={14} /> Mobiele Toegang
+               <Smartphone size={14} /> {t('library.mobileAccess') || 'Mobiele Toegang'}
              </div>
-             <span>Ref: {book.id?.substring(0, 8)}</span>
+             <span>{t('library.ref') || 'Ref'}: {book.id?.substring(0, 8)}</span>
           </div>
         </div>
       </motion.div>

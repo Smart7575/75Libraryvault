@@ -19,8 +19,9 @@ import { UserProfile, userService } from '../../services/userService';
 import { Book, bookService } from '../../services/bookService';
 import { auth } from '../../lib/firebase';
 import { formatDistanceToNow } from 'date-fns';
-import { nl } from 'date-fns/locale';
+import { nl, enUS } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
+import { useLanguage } from '../../lib/LanguageContext';
 
 interface SocialFeedProps {
   onSelectUser: (user: UserProfile) => void;
@@ -29,6 +30,7 @@ interface SocialFeedProps {
 }
 
 export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: SocialFeedProps) {
+  const { t, language } = useLanguage();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [following, setFollowing] = useState<Set<string>>(new Set());
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -136,35 +138,35 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
               onClick={() => setShowFollowingModal(true)}
             >
               <span className={cn("block text-2xl font-serif font-black transition-colors", isDarkMode ? "group-hover/stat:text-editorial-accent-bright" : "group-hover/stat:text-editorial-accent")}>{counts.following}</span>
-              <span className={cn("text-[9px] uppercase font-bold tracking-widest transition-colors", isDarkMode ? "text-white/60 group-hover/stat:text-editorial-accent-bright" : "text-black/40 group-hover/stat:text-editorial-accent")}>Volgend</span>
+              <span className={cn("text-[9px] uppercase font-bold tracking-widest transition-colors", isDarkMode ? "text-white/60 group-hover/stat:text-editorial-accent-bright" : "text-black/40 group-hover/stat:text-editorial-accent")}>{t('social.following') || 'Volgend'}</span>
             </div>
             <div 
               className={cn("text-center border-l cursor-pointer group/stat", isDarkMode ? "border-zinc-800" : "border-editorial-border")}
               onClick={() => setShowFollowers(true)}
             >
               <span className={cn("block text-2xl font-serif font-black transition-colors", isDarkMode ? "group-hover/stat:text-editorial-accent-bright" : "group-hover/stat:text-editorial-accent")}>{counts.followers}</span>
-              <span className={cn("text-[9px] uppercase font-bold tracking-widest transition-colors", isDarkMode ? "text-white/60 group-hover/stat:text-editorial-accent-bright" : "text-black/40 group-hover/stat:text-editorial-accent")}>Volgers</span>
+              <span className={cn("text-[9px] uppercase font-bold tracking-widest transition-colors", isDarkMode ? "text-white/60 group-hover/stat:text-editorial-accent-bright" : "text-black/40 group-hover/stat:text-editorial-accent")}>{t('social.followers') || 'Volgers'}</span>
             </div>
           </div>
         </div>
 
         <div className={cn("border p-6 space-y-4", isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-editorial-bg border-editorial-border")}>
-          <h3 className={cn("text-[10px] font-bold uppercase tracking-[0.2em] italic border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Suggesties</h3>
-          <p className={cn("text-[10px] font-serif italic text-center py-4", isDarkMode ? "text-white" : "text-black/40")}>Zoek gebruikers om je netwerk uit te breiden</p>
+          <h3 className={cn("text-[10px] font-bold uppercase tracking-[0.2em] italic border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>{t('social.suggestions') || 'Suggesties'}</h3>
+          <p className={cn("text-[10px] font-serif italic text-center py-4", isDarkMode ? "text-white" : "text-black/40")}>{t('social.suggestionsDesc') || 'Zoek gebruikers om je netwerk uit te breiden'}</p>
         </div>
       </div>
 
       {/* Main Feed */}
       <div className="col-span-12 lg:col-span-6 space-y-10">
         <div className={cn("pb-4 border-b mb-8", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-           <h2 className="text-4xl font-serif font-black tracking-tight italic">Gemeenschap</h2>
-           <p className={cn("text-sm font-serif italic", isDarkMode ? "text-white" : "text-black/40")}>Recente activiteiten van mede-lezers</p>
+           <h2 className="text-4xl font-serif font-black tracking-tight italic">{t('social.community') || 'Gemeenschap'}</h2>
+           <p className={cn("text-sm font-serif italic", isDarkMode ? "text-white" : "text-black/40")}>{t('social.communityDesc') || 'Recente activiteiten van mede-lezers'}</p>
         </div>
 
         <div className="space-y-12">
           {activities.length === 0 ? (
             <div className={cn("text-center py-20 italic font-serif", isDarkMode ? "text-zinc-800" : "opacity-30")}>
-               Er is nog geen activiteit...
+               {t('social.noActivity') || 'Er is nog geen activiteit...'}
             </div>
           ) : (
             activities.map((activity) => {
@@ -188,7 +190,7 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
                   }}
                   isDarkMode={isDarkMode}
                   onDelete={userService.isAdmin(auth.currentUser?.email) ? () => {
-                    if (activity.id && window.confirm('Activiteit verwijderen?')) {
+                    if (activity.id && window.confirm(t('social.confirmDelete') || 'Activiteit verwijderen?')) {
                       socialService.deleteActivity(activity.id);
                     }
                   } : undefined}
@@ -204,7 +206,7 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
           <div className={cn("border p-6", isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-editorial-border")}>
             <div className="flex items-center gap-2 mb-6">
               <TrendingUp size={16} className={isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent"} />
-              <h3 className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-editorial-accent-bright" : "text-black/40")}>Vandaag Populair</h3>
+              <h3 className={cn("text-[10px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-editorial-accent-bright" : "text-black/40")}>{t('social.todayPopular') || 'Vandaag Populair'}</h3>
             </div>
             <div className="space-y-4">
                {popularBooks.length > 0 ? (
@@ -212,12 +214,12 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
                     <div key={idx} className={cn("pb-4 border-b last:border-0 last:pb-0 font-serif mb-2", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
                       <p className={cn("text-xs font-bold leading-tight uppercase tracking-tight", isDarkMode ? "text-white" : "text-editorial-text")}>{book.title}</p>
                       <p className={cn("text-[9px] uppercase font-black mt-1", isDarkMode ? "text-white/40" : "text-black/40")}>
-                        {book.count} {book.count === 1 ? 'lezer' : 'lezers'} momenteel
+                        {t('social.readersNow', { count: book.count })}
                       </p>
                     </div>
                  ))
                ) : (
-                 <p className={cn("text-[10px] italic font-serif", isDarkMode ? "text-white/20" : "text-black/40")}>Nog geen trends op dit moment.</p>
+                 <p className={cn("text-[10px] italic font-serif", isDarkMode ? "text-white/20" : "text-black/40")}>{t('social.noTrends') || 'Nog geen trends op dit moment.'}</p>
                )}
             </div>
           </div>
@@ -229,7 +231,7 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
              isDarkMode ? "bg-zinc-100 text-zinc-900 hover:bg-neutral-200" : "bg-editorial-text text-white hover:bg-neutral-800"
            )}
          >
-           <Users size={14} /> Zoek Gebruikers
+           <Users size={14} /> {t('social.searchUsers') || 'Zoek Gebruikers'}
          </button>
       </div>
 
@@ -247,7 +249,7 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
               )}
             >
               <div className={cn("p-6 border-b flex items-center justify-between", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-                <h3 className="text-xl font-serif font-black uppercase tracking-tight italic">Zoek Gebruikers</h3>
+                <h3 className="text-xl font-serif font-black uppercase tracking-tight italic">{t('social.searchUsers') || 'Zoek Gebruikers'}</h3>
                 <button onClick={() => setShowSearch(false)} className={cn("p-2 transition-all", isDarkMode ? "text-zinc-500 hover:text-zinc-200" : "hover:bg-black/5 opacity-40 hover:opacity-100")}>
                   <X size={20} />
                 </button>
@@ -258,7 +260,7 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
                   type="text" 
                   value={userQuery}
                   onChange={e => setUserQuery(e.target.value)}
-                  placeholder="Typ een naam..."
+                  placeholder={t('social.searchUsersPlaceholder') || 'Typ een naam...'}
                   className="flex-1 bg-transparent border-none text-sm focus:outline-none placeholder:text-white/40"
                   autoFocus
                 />
@@ -276,7 +278,7 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
                       <img src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} className={cn("w-10 h-10 border", isDarkMode ? "border-zinc-800" : "border-editorial-border")} />
                       <div>
                         <h4 className={cn("text-sm font-bold uppercase tracking-tight", isDarkMode ? "group-hover:text-editorial-accent-bright" : "group-hover:text-editorial-accent")}>{user.displayName}</h4>
-                        <p className={cn("text-[10px] italic font-serif", isDarkMode ? "text-white/40" : "text-black/40")}>{user.city || 'Onbekend'}</p>
+                        <p className={cn("text-[10px] italic font-serif", isDarkMode ? "text-white/40" : "text-black/40")}>{user.city || (t('social.unknownLocation') || 'Onbekend')}</p>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -289,13 +291,13 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
                             : (isDarkMode ? "bg-white text-zinc-900 border-white hover:bg-neutral-200" : "bg-editorial-accent border-editorial-accent text-white hover:bg-neutral-800")
                         )}
                       >
-                        {following.has(user.uid) ? 'Volgend' : 'Volgen'}
+                        {following.has(user.uid) ? (t('social.followed') || 'Volgend') : (t('social.follow') || 'Volgen')}
                       </button>
                     </div>
                   </div>
                 ))}
                 {filteredUsers.length === 0 && (
-                  <p className={cn("text-center py-12 text-sm italic", isDarkMode ? "text-white/40" : "text-black/30")}>Geen gebruikers gevonden</p>
+                  <p className={cn("text-center py-12 text-sm italic", isDarkMode ? "text-white/40" : "text-black/30")}>{t('social.nothingFound') || 'Geen gebruikers gevonden'}</p>
                 )}
               </div>
             </motion.div>
@@ -317,7 +319,7 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
               )}
             >
               <div className={cn("p-6 border-b flex items-center justify-between", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-                <h3 className="text-xl font-serif font-black uppercase tracking-tight italic">Mijn Volgers</h3>
+                <h3 className="text-xl font-serif font-black uppercase tracking-tight italic">{t('social.myFollowers') || 'Mijn Volgers'}</h3>
                 <button onClick={() => setShowFollowers(false)} className={cn("p-2 transition-all", isDarkMode ? "text-zinc-500 hover:text-zinc-200" : "hover:bg-black/5 opacity-40 hover:opacity-100")}>
                   <X size={20} />
                 </button>
@@ -340,7 +342,7 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
                         />
                         <div>
                           <h4 className="text-sm font-bold uppercase tracking-tight group-hover:text-editorial-accent">{user.displayName}</h4>
-                          <p className={cn("text-[10px] italic font-serif", isDarkMode ? "text-zinc-600" : "text-black/40")}>{user.city || 'Onbekend'}</p>
+                          <p className={cn("text-[10px] italic font-serif", isDarkMode ? "text-zinc-600" : "text-black/40")}>{user.city || (t('social.unknownLocation') || 'Onbekend')}</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
@@ -353,14 +355,14 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
                               : (isDarkMode ? "bg-zinc-100 text-zinc-900 border-zinc-100 hover:bg-white" : "bg-editorial-accent border-editorial-accent text-white hover:bg-neutral-800")
                           )}
                         >
-                          {following.has(user.uid) ? 'Volgend' : 'Volg terug'}
+                          {following.has(user.uid) ? (t('social.followed') || 'Volgend') : (t('social.followBack') || 'Volg terug')}
                         </button>
                       </div>
                     </div>
                   );
                 })}
                 {followersList.length === 0 && (
-                  <p className={cn("text-center py-12 text-sm italic", isDarkMode ? "text-zinc-800" : "text-black/30")}>Nog geen volgers</p>
+                  <p className={cn("text-center py-12 text-sm italic", isDarkMode ? "text-zinc-800" : "text-black/30")}>{t('social.noFollowers') || 'Nog geen volgers'}</p>
                 )}
               </div>
             </motion.div>
@@ -382,7 +384,7 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
               )}
             >
               <div className={cn("p-6 border-b flex items-center justify-between", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
-                <h3 className="text-xl font-serif font-black uppercase tracking-tight italic">Ik volg</h3>
+                <h3 className="text-xl font-serif font-black uppercase tracking-tight italic">{t('social.iFollow') || 'Ik volg'}</h3>
                 <button onClick={() => setShowFollowingModal(false)} className={cn("p-2 transition-all", isDarkMode ? "text-zinc-500 hover:text-zinc-200" : "hover:bg-black/5 opacity-40 hover:opacity-100")}>
                   <X size={20} />
                 </button>
@@ -405,7 +407,7 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
                         />
                         <div>
                           <h4 className="text-sm font-bold uppercase tracking-tight group-hover:text-editorial-accent">{user.displayName}</h4>
-                          <p className={cn("text-[10px] italic font-serif", isDarkMode ? "text-zinc-600" : "text-black/40")}>{user.city || 'Onbekend'}</p>
+                          <p className={cn("text-[10px] italic font-serif", isDarkMode ? "text-zinc-600" : "text-black/40")}>{user.city || (t('social.unknownLocation') || 'Onbekend')}</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
@@ -416,14 +418,14 @@ export default function SocialFeed({ onSelectUser, onSelectChat, isDarkMode }: S
                             isDarkMode ? "text-zinc-600 border-zinc-800 hover:text-red-500 hover:border-red-500" : "text-black/30 border-editorial-border hover:text-black hover:border-black"
                           )}
                         >
-                          Ontvolgen
+                          {t('social.unfollow') || 'Ontvolgen'}
                         </button>
                       </div>
                     </div>
                   );
                 })}
                 {followingList.length === 0 && (
-                  <p className={cn("text-center py-12 text-sm italic", isDarkMode ? "text-zinc-800" : "text-black/30")}>Je volgt nog niemand</p>
+                  <p className={cn("text-center py-12 text-sm italic", isDarkMode ? "text-zinc-800" : "text-black/30")}>{t('social.noFollowing') || 'Je volgt nog niemand'}</p>
                 )}
               </div>
             </motion.div>
@@ -444,6 +446,7 @@ const ActivityItem: React.FC<{
   isDarkMode?: boolean,
   onDelete?: () => void
 }> = ({ activity, isFollowing, isSelf, onFollow, onSelectUser, onChat, isDarkMode, onDelete }) => {
+  const { t, language } = useLanguage();
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -473,7 +476,7 @@ const ActivityItem: React.FC<{
                 <button 
                   onClick={(e) => { e.stopPropagation(); onDelete(); }}
                   className={cn("p-1.5 transition-colors", isDarkMode ? "text-white/20 hover:text-red-500" : "text-black/20 hover:text-red-500")}
-                  title="Verwijder activiteit"
+                  title={t('social.deleteActivity') || "Verwijder activiteit"}
                 >
                   <Trash2 size={12} />
                 </button>
@@ -491,7 +494,7 @@ const ActivityItem: React.FC<{
                   )}
                 >
                   {isFollowing ? <UserMinus size={10} /> : <UserPlus size={10} />}
-                  {isFollowing ? 'Volgend' : 'Volgen'}
+                  {isFollowing ? (t('social.followed') || 'Volgend') : (t('social.follow') || 'Volgen')}
                 </button>
                 {isFollowing && (
                   <button 
@@ -501,7 +504,7 @@ const ActivityItem: React.FC<{
                       isDarkMode ? "border-white text-white hover:bg-white hover:text-zinc-900" : "border-editorial-text text-editorial-text hover:bg-editorial-text hover:text-white"
                     )}
                   >
-                    <MessageCircle size={10} /> Chat
+                    <MessageCircle size={10} /> {t('social.message')}
                   </button>
                 )}
               </div>
@@ -509,7 +512,10 @@ const ActivityItem: React.FC<{
           </div>
           <p className={cn("text-[10px] font-sans font-bold flex items-center gap-1.5 uppercase tracking-wider mt-1", isDarkMode ? "text-white" : "text-black/40")}>
             <Clock size={10} /> 
-            {formatDistanceToNow(activity.createdAt?.toDate() || new Date(), { addSuffix: true, locale: nl })}
+            {formatDistanceToNow(activity.createdAt?.toDate() || new Date(), { 
+              addSuffix: true, 
+              locale: language === 'nl' ? nl : enUS 
+            })}
           </p>
         </div>
       </div>
@@ -517,14 +523,14 @@ const ActivityItem: React.FC<{
       <div className="pl-16 space-y-6">
         <div className={cn("text-sm font-serif leading-relaxed", isDarkMode ? "text-white" : "text-editorial-text")}>
           {activity.type === 'START_READING' && (
-             <p>Is begonnen met het lezen van <span className="font-bold italic">"{activity.bookTitle}"</span></p>
+             <p>{t('social.activities.started') || 'Is begonnen met het lezen van'} <span className="font-bold italic">"{activity.bookTitle}"</span></p>
           )}
           {activity.type === 'FINISH_READING' && (
-             <p>Heeft <span className="font-bold italic">"{activity.bookTitle}"</span> uitgelezen!</p>
+             <p>{t('social.activities.finished') || 'Heeft'} <span className="font-bold italic">"{activity.bookTitle}"</span> {t('social.activities.finishedEnd') || 'uitgelezen!'}</p>
           )}
           {activity.type === 'RATE_BOOK' && (
              <div className="space-y-4">
-                <p>Heeft <span className="font-bold italic">"{activity.bookTitle}"</span> gewaardeerd:</p>
+                <p>{t('social.activities.rated') || 'Heeft'} <span className="font-bold italic">"{activity.bookTitle}"</span> {t('social.activities.ratedEnd') || 'gewaardeerd:'}</p>
                 <div className={cn("text-sm gap-1 flex", isDarkMode ? "text-white" : "text-editorial-accent")}>
                    {[1, 2, 3, 4, 5].map(s => {
                      const isFilled = s <= (activity.rating || 0);
@@ -557,7 +563,7 @@ const ActivityItem: React.FC<{
             </div>
             <div className="space-y-1">
                <p className={cn("text-xs font-bold uppercase tracking-widest transition-colors", isDarkMode ? "text-white group-hover/book:text-editorial-accent-bright" : "text-editorial-text group-hover/book:text-editorial-accent")}>{activity.bookTitle}</p>
-               <p className={cn("text-[9px] font-serif italic", isDarkMode ? "text-white" : "text-black/40")}>Bekijk de bibliotheek van {activity.userName}</p>
+               <p className={cn("text-[9px] font-serif italic", isDarkMode ? "text-white" : "text-black/40")}>{t('social.viewLibrary') || 'Bekijk de bibliotheek van'} {activity.userName}</p>
             </div>
           </div>
         )}

@@ -22,6 +22,8 @@ import UserProfileDetail from './components/Social/UserProfileDetail';
 import Messages from './components/Social/Messages';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import { UserProfile, userService } from './services/userService';
+import { useLanguage } from './lib/LanguageContext';
+import { Language, translateStatus } from './translations';
 
 // Types
 type ViewMode = 'grid' | 'list' | 'series' | 'authors' | 'genres' | 'stats' | 'settings' | 'profile' | 'feed' | 'user-profile' | 'messages' | 'admin';
@@ -33,6 +35,7 @@ function getSortableName(name: string) {
 }
 
 export default function App() {
+  const { t, language, setLanguage } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,9 +70,15 @@ export default function App() {
 
   useEffect(() => {
     let profileUnsubscribe: (() => void) | null = null;
+    let booksUnsubscribe: (() => void) | null = null;
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      
+      // Cleanup previous listeners
+      if (profileUnsubscribe) profileUnsubscribe();
+      if (booksUnsubscribe) booksUnsubscribe();
+      
       if (user) {
         // Realtime sync user profile
         const userRef = doc(db, 'users', user.uid);
@@ -79,46 +88,50 @@ export default function App() {
         if (!userSnap.exists()) {
           await setDoc(userRef, {
             email: user.email || '',
-            displayName: user.displayName || user.email?.split('@')[0] || 'Gebruiker',
+            displayName: user.displayName || user.email?.split('@')[0] || (t('common.user') || 'Gebruiker'),
             photoURL: user.photoURL || '',
             theme: 'light',
             uid: user.uid
           });
         }
         
-        // Listen for changes
+        // Listen for profile changes
         profileUnsubscribe = onSnapshot(userRef, (snap) => {
           if (snap.exists()) {
             setUserProfile({ uid: snap.id, ...snap.data() } as UserProfile);
           }
         });
         
-        fetchBooks();
+        // Listen for books changes
+        booksUnsubscribe = bookService.onBooksUpdate((updatedBooks) => {
+          setBooks(updatedBooks);
+          
+          // Sync selected book if one is open
+          setSelectedBook(prev => {
+            if (!prev) return null;
+            const updated = updatedBooks.find(b => b.id === prev.id);
+            return updated || prev;
+          });
+        });
       } else {
         setUserProfile(null);
-        if (profileUnsubscribe) {
-          profileUnsubscribe();
-          profileUnsubscribe = null;
-        }
+        setBooks([]);
+        profileUnsubscribe = null;
+        booksUnsubscribe = null;
       }
       setLoading(false);
     });
+
     return () => {
       unsubscribe();
       if (profileUnsubscribe) profileUnsubscribe();
+      if (booksUnsubscribe) booksUnsubscribe();
     };
   }, []);
 
-  const fetchBooks = async () => {
-    const fetchedBooks = await bookService.getAllBooks();
-    setBooks(fetchedBooks);
-    
-    // Sync selected book if one is open
-    setSelectedBook(prev => {
-      if (!prev) return null;
-      const updated = fetchedBooks.find(b => b.id === prev.id);
-      return updated || prev;
-    });
+  // fetchBooks is now deprecated in favor of real-time sync, but keeping it for legacy prop compatibility
+  const fetchBooks = () => {
+    // This is now handled by onSnapshot
   };
 
   const handleLogin = async (email: string, password: string, isSignUp: boolean) => {
@@ -132,19 +145,19 @@ export default function App() {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      let message = 'Er is een fout opgetreden.';
+      let message = t('auth.errorGeneric') || 'Er is een fout opgetreden.';
       const errorCode = error.code ? ` (${error.code})` : '';
       
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        message = 'Onjuiste e-mail of wachtwoord.';
+        message = t('auth.errorInvalid') || 'Onjuiste e-mail of wachtwoord.';
       } else if (error.code === 'auth/email-already-in-use') {
-        message = 'Dit e-mailadres is al in gebruik.';
+        message = t('auth.errorEmailInUse') || 'Dit e-mailadres is al in gebruik.';
       } else if (error.code === 'auth/weak-password') {
-        message = 'Het wachtwoord is te zwak.';
+        message = t('auth.errorWeakPassword') || 'Het wachtwoord is te zwak.';
       } else if (error.code === 'auth/operation-not-allowed') {
-        message = 'Inloggen met e-mail/wachtwoord is niet ingeschakeld in de Firebase Console.';
+        message = t('auth.errorOperationNotAllowed') || 'Inloggen met e-mail/wachtwoord is niet ingeschakeld in de Firebase Console.';
       } else {
-        message = error.message || 'Fout bij inloggen.';
+        message = error.message || t('auth.errorAuthFailed') || 'Fout bij inloggen.';
       }
       setLoginError(`${message}${errorCode}`);
     } finally {
@@ -160,15 +173,15 @@ export default function App() {
     } catch (error: any) {
       console.error('Google Auth error:', error);
       if (error.code === 'auth/popup-blocked') {
-        setLoginError('Pop-up geblokkeerd door je browser. Sta pop-ups toe voor deze site.');
+        setLoginError(t('auth.errorPopupBlocked') || 'Pop-up geblokkeerd door je browser. Sta pop-ups toe voor deze site.');
       } else if (error.code === 'auth/popup-closed-by-user') {
-        setLoginError('Het inlogvenster werd gesloten voordat het inloggen was voltooid. Probeer het opnieuw en laat het venster openstaan. Op een iPad helpt het vaak om "Blokkeer pop-ups" uit te zetten in de Safari-instellingen.');
+        setLoginError(t('auth.errorPopupClosed') || 'Het inlogvenster werd gesloten voordat het inloggen was voltooid.');
       } else if (error.code === 'auth/unauthorized-domain') {
-        setLoginError('Domein niet geautoriseerd in Firebase Console. Voeg ais-dev en ais-pre toe aan Geautoriseerde Domeinen.');
+        setLoginError('Domein niet geautoriseerd in Firebase Console.');
       } else if (error.code === 'auth/operation-not-allowed') {
-        setLoginError('Google Login is niet ingeschakeld in de Firebase Console.');
+        setLoginError(t('auth.errorOperationNotAllowed') || 'Google Login is niet ingeschakeld in de Firebase Console.');
       } else {
-        setLoginError(error.message || 'Fout bij inloggen met Google.');
+        setLoginError(error.message || t('auth.errorAuthFailed') || 'Fout bij inloggen met Google.');
       }
     } finally {
       setIsLoggingIn(false);
@@ -236,8 +249,8 @@ export default function App() {
     const sourceBooks = searchQuery.trim() ? filteredBooks : books;
 
     sourceBooks.forEach(b => {
-      // Use the first genre as primary group, or 'Onbekend' if empty
-      const primaryGenre = b.genre && b.genre.length > 0 ? b.genre[0] : 'Onoverzicht';
+      // Use the first genre as primary group, or 'Unknown' if empty
+      const primaryGenre = b.genre && b.genre.length > 0 ? b.genre[0] : (t('common.unknown') || 'Onbekend');
       if (!groups[primaryGenre]) groups[primaryGenre] = [];
       groups[primaryGenre].push(b);
     });
@@ -332,18 +345,18 @@ export default function App() {
 
         <div className="flex-1 space-y-4">
           <section>
-            <p className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40 font-bold mb-2 italic">Sociaal</p>
+            <p className="text-[10px] uppercase tracking-widest text-black/40 dark:text-white/40 font-bold mb-2 italic">{t('social.title') || 'Social'}</p>
             <div className="space-y-0.5">
               <NavItem 
                 icon={<Globe size={16} />} 
-                label="Overzicht" 
+                label={t('nav.feed') || 'Overzicht'} 
                 active={viewMode === 'feed'} 
                 onClick={() => setViewMode('feed')} 
                 isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<MessageSquare size={16} />} 
-                label="Berichten" 
+                label={t('nav.messages') || 'Berichten'} 
                 active={viewMode === 'messages'} 
                 onClick={() => setViewMode('messages')} 
                 isDarkMode={isDarkMode}
@@ -352,39 +365,39 @@ export default function App() {
           </section>
 
           <section>
-            <p className={cn("text-[10px] uppercase tracking-widest font-bold mb-2 italic", isDarkMode ? "text-white/40" : "text-black/40")}>Collectie</p>
+            <p className={cn("text-[10px] uppercase tracking-widest font-bold mb-2 italic", isDarkMode ? "text-white/40" : "text-black/40")}>{t('nav.collection') || 'Collectie'}</p>
             <div className="space-y-0.5">
               <NavItem 
                 icon={<Grid2X2 size={16} />} 
-                label="Bibliotheek" 
+                label={t('nav.library') || 'Bibliotheek'} 
                 active={viewMode === 'grid' || viewMode === 'list'} 
                 onClick={() => setViewMode('grid')} 
                 isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<BookMarked size={16} />} 
-                label="Series Wall" 
+                label={t('nav.seriesWall') || 'Series Wall'} 
                 active={viewMode === 'series'} 
                 onClick={() => setViewMode('series')} 
                 isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<Users size={16} />} 
-                label="Auteurs" 
+                label={t('nav.authors') || 'Auteurs'} 
                 active={viewMode === 'authors'} 
                 onClick={() => setViewMode('authors')} 
                 isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<Filter size={16} />} 
-                label="Genres" 
+                label={t('nav.genres') || 'Genres'} 
                 active={viewMode === 'genres'} 
                 onClick={() => setViewMode('genres')} 
                 isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<BarChart3 size={16} />} 
-                label="Statistieken" 
+                label={t('nav.stats') || 'Statistieken'} 
                 active={viewMode === 'stats'} 
                 onClick={() => setViewMode('stats')} 
                 isDarkMode={isDarkMode}
@@ -393,18 +406,18 @@ export default function App() {
           </section>
 
           <section>
-            <p className={cn("text-[10px] uppercase tracking-widest font-bold mb-2 italic", isDarkMode ? "text-white/40" : "text-black/40")}>Systeem</p>
+            <p className={cn("text-[10px] uppercase tracking-widest font-bold mb-2 italic", isDarkMode ? "text-white/40" : "text-black/40")}>{t('nav.system') || 'Systeem'}</p>
             <div className="space-y-0.5">
               <NavItem 
                 icon={<UserIcon size={16} />} 
-                label="Mijn Profiel" 
+                label={t('nav.profile') || 'Mijn Profiel'} 
                 active={viewMode === 'profile'} 
                 onClick={() => setViewMode('profile')} 
                 isDarkMode={isDarkMode}
               />
               <NavItem 
                 icon={<Settings size={16} />} 
-                label="Instellingen" 
+                label={t('nav.settings') || 'Instellingen'} 
                 active={viewMode === 'settings'} 
                 onClick={() => setViewMode('settings')} 
                 isDarkMode={isDarkMode}
@@ -412,7 +425,7 @@ export default function App() {
               {userService.isAdmin(user?.email) && (
                 <NavItem 
                   icon={<Shield size={16} />} 
-                  label="Administrator" 
+                  label={t('nav.admin') || 'Administrator'} 
                   active={viewMode === 'admin'} 
                   onClick={() => setViewMode('admin')} 
                   isDarkMode={isDarkMode}
@@ -446,7 +459,7 @@ export default function App() {
             onClick={() => setIsAddModalOpen(true)}
             className="w-full bg-editorial-text text-white py-3 rounded-none text-[10px] uppercase tracking-[0.2em] font-bold shadow-sm hover:bg-neutral-800 transition-colors"
           >
-            + Nieuw Boek
+            {t('library.addBook') || '+ Nieuw Boek'}
           </button>
         </div>
       </nav>
@@ -531,7 +544,7 @@ export default function App() {
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Zoek..." 
+              placeholder={t('library.searchPlaceholder') || 'Search...'} 
               className={cn(
                 "bg-transparent border-none text-sm w-full max-w-[240px] focus:outline-none focus:ring-0 font-medium",
                 isDarkMode ? "placeholder-white text-white" : "placeholder-black/30 text-editorial-text"
@@ -542,7 +555,7 @@ export default function App() {
           <div className="flex items-center gap-4 md:gap-8 flex-shrink-0">
             
             <div className="flex items-center gap-2">
-              <span className={cn("text-[10px] font-bold uppercase tracking-wider", isDarkMode ? "text-white" : "opacity-40")}>Totaal:</span>
+              <span className={cn("text-[10px] font-bold uppercase tracking-wider", isDarkMode ? "text-white" : "opacity-40")}>{t('common.total') || 'Totaal'}:</span>
               <span className={cn("text-[10px] font-bold uppercase tracking-wider", isDarkMode ? "text-white" : "")}>{books.length}</span>
             </div>
           </div>
@@ -578,7 +591,7 @@ export default function App() {
               isDarkMode={isDarkMode}
             />
           ) : viewMode === 'stats' ? (
-            <Stats books={books} isDarkMode={isDarkMode} />
+            <Stats books={books} isDarkMode={isDarkMode} readingGoal={userProfile?.readingGoal} />
           ) : viewMode === 'profile' ? (
             <ProfileView user={user} books={books} isDarkMode={isDarkMode} />
           ) : viewMode === 'admin' ? (
@@ -595,15 +608,15 @@ export default function App() {
               <div className="flex items-center justify-between mb-10">
                 <div className="flex items-baseline gap-4">
                   <h2 className="text-3xl md:text-5xl font-serif font-black tracking-tighter">
-                    {viewMode === 'grid' && "Collectie"}
-                    {viewMode === 'list' && "Lijst Weergave"}
-                    {viewMode === 'series' && "Series Wall"}
-                    {viewMode === 'authors' && "Overzicht Auteurs"}
-                    {viewMode === 'genres' && "Overzicht Genres"}
-                    {viewMode === 'profile' && "Mijn Profiel"}
+                    {viewMode === 'grid' && (t('library.title') || "Collectie")}
+                    {viewMode === 'list' && (t('library.listView') || "Lijst Weergave")}
+                    {viewMode === 'series' && (t('library.seriesWall') || "Series Wall")}
+                    {viewMode === 'authors' && (t('library.authorsOverview') || "Overzicht Auteurs")}
+                    {viewMode === 'genres' && (t('library.genresOverview') || "Overzicht Genres")}
+                    {viewMode === 'profile' && (t('library.myProfile') || "Mijn Profiel")}
                   </h2>
                   {searchQuery && (
-                    <span className={cn("text-lg font-serif italic hidden md:inline", isDarkMode ? "text-white" : "text-black/40")}>voor "{searchQuery}"</span>
+                    <span className={cn("text-lg font-serif italic hidden md:inline", isDarkMode ? "text-white" : "text-black/40")}>{t('library.for') || 'voor'} "{searchQuery}"</span>
                   )}
                 </div>
               </div>
@@ -618,7 +631,7 @@ export default function App() {
                     <p className={cn(
                       "font-serif italic text-xl mb-1",
                       isDarkMode ? "text-white/40" : "text-black/40"
-                    )}>Niets gevonden</p>
+                    )}>{t('library.nothingFound') || 'Niets gevonden'}</p>
                   </div>
                 ) : viewMode === 'series' ? (
                   <div className="space-y-16">
@@ -626,7 +639,7 @@ export default function App() {
                        <div key={name} className="space-y-6">
                           <div className="flex items-baseline gap-4 border-b border-editorial-border dark:border-zinc-800 pb-2">
                             <h2 className="text-3xl font-serif font-bold tracking-tight">{name}</h2>
-                            <span className={cn("font-serif italic text-sm", isDarkMode ? "text-white" : "text-black/40")}>{seriesBooks.length} delen</span>
+                            <span className={cn("font-serif italic text-sm", isDarkMode ? "text-white" : "text-black/40")}>{seriesBooks.length} {t('library.volumes')}</span>
                           </div>
                           <div className="flex gap-8 overflow-x-auto pb-6 scrollbar-hide">
                              {seriesBooks.map(book => (
@@ -644,7 +657,7 @@ export default function App() {
                        <div key={name} className="space-y-6">
                           <div className="flex items-baseline gap-4 border-b border-editorial-border dark:border-zinc-800 pb-2">
                             <h2 className="text-3xl font-serif font-bold tracking-tight">{name}</h2>
-                            <span className={cn("font-serif italic text-sm", isDarkMode ? "text-white" : "text-black/40")}>{authorBooks.length} boeken</span>
+                            <span className={cn("font-serif italic text-sm", isDarkMode ? "text-white" : "text-black/40")}>{authorBooks.length} {t('library.booksCount')}</span>
                           </div>
                           <div className="flex gap-8 overflow-x-auto pb-6 scrollbar-hide">
                              {authorBooks.map(book => (
@@ -662,7 +675,7 @@ export default function App() {
                        <div key={name} className="space-y-6">
                           <div className="flex items-baseline gap-4 border-b border-editorial-border dark:border-zinc-800 pb-2">
                             <h2 className="text-3xl font-serif font-bold tracking-tight">{name}</h2>
-                            <span className={cn("font-serif italic text-sm", isDarkMode ? "text-white" : "text-black/40")}>{genreBooks.length} boeken</span>
+                            <span className={cn("font-serif italic text-sm", isDarkMode ? "text-white" : "text-black/40")}>{genreBooks.length} {t('library.booksCount')}</span>
                           </div>
                           <div className="flex gap-8 overflow-x-auto pb-6 scrollbar-hide">
                              {genreBooks.map(book => (
@@ -708,13 +721,13 @@ export default function App() {
            <div className="flex gap-10">
               <span className="flex items-center gap-2">
                 <div className={cn("w-1.5 h-1.5 rounded-full", isDarkMode ? "bg-editorial-accent-bright" : "bg-editorial-accent")}></div> 
-                {books.length} Boeken
+                {books.length} {t('library.books') || 'Boeken'}
               </span>
-              <span>{books.filter(b => b.readingStatus === 'Gelezen').length} Gelezen</span>
+              <span>{books.filter(b => b.readingStatus === (language === 'nl' ? 'Gelezen' : 'Finished') || b.readingStatus === 'Gelezen' || b.readingStatus === 'Finished').length} {t('library.read') || 'Gelezen'}</span>
            </div>
            <div className="flex gap-6">
-             <span className={isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent"}>Status: Online</span>
-             <span>MEI 2026</span>
+              <span className={isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent"}>{t('library.statusOnline') || 'Status: Online'}</span>
+              <span>{t('common.months.may') || 'MEI'} 2026</span>
            </div>
         </footer>
       </main>
@@ -763,6 +776,8 @@ function ViewToggle({ active, onClick, icon, label }: { active: boolean, onClick
 }
 
 function BookItem({ book, mode, onClick, coverWidth, isDarkMode }: { book: Book, mode: 'grid' | 'list', onClick: () => void, coverWidth?: number, isDarkMode?: boolean, key?: React.Key }) {
+  const { language } = useLanguage();
+  
   if (mode === 'list') {
     return (
       <div 
@@ -805,7 +820,7 @@ function BookItem({ book, mode, onClick, coverWidth, isDarkMode }: { book: Book,
             book.readingStatus === 'Wil ik lezen' ? (isDarkMode ? "text-orange-500 bg-orange-500/10" : "text-orange-700 bg-orange-50/50") :
             (isDarkMode ? "text-zinc-700 border-zinc-800" : "text-black/30")
           )}>
-            {book.readingStatus}
+            {translateStatus(book.readingStatus, language)}
           </span>
         </div>
         
@@ -885,9 +900,7 @@ function BookItem({ book, mode, onClick, coverWidth, isDarkMode }: { book: Book,
       </div>
     </motion.div>
   );
-}
-
-function SettingsView({ 
+}function SettingsView({ 
   isDarkMode, 
   setIsDarkMode, 
   coverWidth, 
@@ -898,38 +911,77 @@ function SettingsView({
   coverWidth: number,
   setCoverWidth: (v: number) => void
 }) {
+  const { t, language, setLanguage } = useLanguage();
+
   return (
     <div className="max-w-4xl space-y-12">
       <section className="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div className="space-y-12">
           <section className="space-y-6">
-            <h3 className={cn("text-xl font-serif italic font-bold border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Interface</h3>
-            <div className="flex items-center justify-between">
-               <div>
-                 <p className={cn("font-bold uppercase text-xs tracking-widest", isDarkMode ? "text-zinc-200" : "text-black")}>Donkere Modus</p>
-                 <p className={cn("text-xs italic", isDarkMode ? "text-zinc-600" : "text-black/40")}>Voor nachtelijk lezen</p>
-               </div>
-               <button 
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className={cn(
-                  "w-12 h-6 border p-1 transition-colors duration-300",
-                  isDarkMode ? "bg-white border-white" : "bg-transparent border-editorial-border"
-                )}
-               >
+            <h3 className={cn("text-xl font-serif italic font-bold border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>{t('settings.interface') || 'Interface'}</h3>
+            
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                 <div>
+                   <p className={cn("font-bold uppercase text-xs tracking-widest", isDarkMode ? "text-zinc-200" : "text-black")}>{t('settings.language') || 'Taal'}</p>
+                   <p className={cn("text-xs italic", isDarkMode ? "text-zinc-600" : "text-black/40")}>{t('settings.languageDesc') || 'Kies je voorkeurstaal'}</p>
+                 </div>
                  <div className={cn(
-                   "w-4 h-4 transition-transform duration-300",
-                   isDarkMode ? "translate-x-6 bg-black" : "translate-x-0 bg-black"
-                 )} />
-               </button>
+                   "flex border",
+                   isDarkMode ? "border-zinc-800" : "border-editorial-border"
+                 )}>
+                   <button 
+                    onClick={() => setLanguage('en')}
+                    className={cn(
+                      "px-3 py-1 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                      language === 'en' 
+                        ? (isDarkMode ? "bg-zinc-100 text-zinc-900" : "bg-editorial-text text-white") 
+                        : (isDarkMode ? "bg-transparent text-zinc-500 hover:text-white" : "bg-transparent text-black/40 hover:text-black")
+                    )}
+                   >
+                     EN
+                   </button>
+                   <button 
+                    onClick={() => setLanguage('nl')}
+                    className={cn(
+                      "px-3 py-1 text-[10px] font-bold uppercase tracking-widest transition-colors",
+                      language === 'nl' 
+                        ? (isDarkMode ? "bg-zinc-100 text-zinc-900" : "bg-editorial-text text-white") 
+                        : (isDarkMode ? "bg-transparent text-zinc-500 hover:text-white" : "bg-transparent text-black/40 hover:text-black")
+                    )}
+                   >
+                     NL
+                   </button>
+                 </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                 <div>
+                   <p className={cn("font-bold uppercase text-xs tracking-widest", isDarkMode ? "text-zinc-200" : "text-black")}>{t('settings.darkMode') || 'Donkere Modus'}</p>
+                   <p className={cn("text-xs italic", isDarkMode ? "text-zinc-600" : "text-black/40")}>{t('settings.darkModeDesc') || 'Voor nachtelijk lezen'}</p>
+                 </div>
+                 <button 
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className={cn(
+                    "w-12 h-6 border p-1 transition-colors duration-300",
+                    isDarkMode ? "bg-white border-white" : "bg-transparent border-editorial-border"
+                  )}
+                 >
+                   <div className={cn(
+                     "w-4 h-4 transition-transform duration-300",
+                     isDarkMode ? "translate-x-6 bg-black" : "translate-x-0 bg-black"
+                   )} />
+                 </button>
+              </div>
             </div>
           </section>
 
           <section className="space-y-6">
-            <h3 className={cn("text-xl font-serif italic font-bold border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Weergave</h3>
+            <h3 className={cn("text-xl font-serif italic font-bold border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>{t('settings.display') || 'Weergave'}</h3>
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between mb-2">
-                  <p className={cn("font-bold uppercase text-xs tracking-widest", isDarkMode ? "text-zinc-200" : "text-black")}>Grootte Boekomslag</p>
+                  <p className={cn("font-bold uppercase text-xs tracking-widest", isDarkMode ? "text-zinc-200" : "text-black")}>{t('settings.coverSize') || 'Grootte Boekomslag'}</p>
                   <span className={cn("text-xs font-mono", isDarkMode ? "text-zinc-700" : "text-black/40")}>{coverWidth}px</span>
                 </div>
                 <input 
@@ -952,16 +1004,16 @@ function SettingsView({
           </section>
 
           <section className="space-y-6">
-            <h3 className={cn("text-xl font-serif italic font-bold border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>Bibliotheek Data</h3>
+            <h3 className={cn("text-xl font-serif italic font-bold border-b pb-2", isDarkMode ? "text-editorial-accent-bright border-zinc-800" : "text-editorial-accent border-editorial-border")}>{t('settings.data') || 'Bibliotheek Data'}</h3>
             <div className="space-y-2">
-               <SettingsButton label="Exporteer Bibliotheek (JSON)" isDarkMode={isDarkMode} />
-               <SettingsButton label="Exporteer als CSV" isDarkMode={isDarkMode} />
+               <SettingsButton label={t('settings.exportJson') || 'Exporteer Bibliotheek (JSON)'} isDarkMode={isDarkMode} />
+               <SettingsButton label={t('settings.exportCsv') || 'Exporteer als CSV'} isDarkMode={isDarkMode} />
             </div>
           </section>
         </div>
 
         <div className={cn("flex flex-col items-center justify-start pt-12 space-y-4 border p-8", isDarkMode ? "bg-zinc-950 border-zinc-800" : "bg-black/[0.02] border-editorial-border")}>
-           <p className={cn("text-[10px] font-bold uppercase tracking-[0.2em] mb-4 italic", isDarkMode ? "text-zinc-700" : "text-black/30")}>Voorbeeld Weergave</p>
+           <p className={cn("text-[10px] font-bold uppercase tracking-[0.2em] mb-4 italic", isDarkMode ? "text-zinc-700" : "text-black/30")}>{t('settings.previewTitle') || 'Voorbeeld Weergave'}</p>
            <div className="relative group" style={{ width: coverWidth }}>
              <div className={cn("aspect-[2/3] overflow-hidden shadow-2xl border", isDarkMode ? "border-zinc-800 bg-zinc-900" : "border-black/10 bg-[#d9d5ce]")}>
                 <img 
@@ -974,12 +1026,12 @@ function SettingsView({
                 </div>
               </div>
               <div className="mt-4 text-center">
-                <h4 className={cn("font-bold text-xs uppercase tracking-tight", isDarkMode ? "text-white" : "text-black")}>Titel van het Boek</h4>
-                <p className={cn("text-[10px] italic", isDarkMode ? "text-white" : "text-black/50")}>Auteur Naam</p>
+                <h4 className={cn("font-bold text-xs uppercase tracking-tight", isDarkMode ? "text-white" : "text-black")}>{t('settings.previewBookTitle') || 'Titel van het Boek'}</h4>
+                <p className={cn("text-[10px] italic", isDarkMode ? "text-white" : "text-black/50")}>{t('settings.previewAuthorName') || 'Auteur Naam'}</p>
               </div>
            </div>
            <p className={cn("text-[10px] italic mt-8 text-center max-w-[200px]", isDarkMode ? "text-white" : "text-black/30")}>
-             Pas de schuifbalk aan om de ideale grootte voor jouw collectie te vinden.
+             {t('settings.previewDesc') || 'Pas de schuifbalk aan om de ideale grootte voor jouw collectie te vinden.'}
            </p>
         </div>
       </section>
@@ -1000,6 +1052,7 @@ function SettingsButton({ label, isDarkMode }: { label: string, isDarkMode?: boo
 }
 
 function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn, isDarkMode }: { onAuth: (email: string, password: string, isSignUp: boolean) => void, onGoogleAuth: () => void, error: string | null, isLoggingIn: boolean, isDarkMode: boolean }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -1033,7 +1086,7 @@ function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn, isDarkMode }: { o
         </h1>
         
         <p className={cn("mb-10 text-sm font-serif italic max-w-xs mx-auto", isDarkMode ? "text-zinc-600" : "text-editorial-text/60")}>
-          {isSignUp ? "Maak een account aan voor je bibliotheek." : "Toegang tot je persoonlijke digitale bibliotheek."}
+          {isSignUp ? t('auth.signupTitle') : t('auth.loginTitle')}
         </p>
         
         <div className="space-y-4 mb-8">
@@ -1052,18 +1105,18 @@ function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn, isDarkMode }: { o
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 1.2-4.53z" />
             </svg>
-            Inloggen met Google
+            {t('auth.googleLogin')}
           </button>
           
           <div className="relative">
             <div className={cn("absolute inset-0 flex items-center", isDarkMode ? "opacity-20" : "")}><span className={cn("w-full border-t", isDarkMode ? "border-zinc-700" : "border-editorial-border")}></span></div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className={cn("px-4 font-bold italic", isDarkMode ? "bg-zinc-900 text-zinc-700" : "bg-white text-black/30")}>of</span></div>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className={cn("px-4 font-bold italic", isDarkMode ? "bg-zinc-900 text-zinc-700" : "bg-white text-black/30")}>{t('auth.or')}</span></div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div className="space-y-1">
-            <label className={cn("text-[10px] font-bold uppercase tracking-widest italic px-1", isDarkMode ? "text-zinc-700" : "text-black/40")}>E-mailadres</label>
+            <label className={cn("text-[10px] font-bold uppercase tracking-widest italic px-1", isDarkMode ? "text-zinc-700" : "text-black/40")}>{t('auth.email')}</label>
             <input 
               required
               type="email" 
@@ -1073,12 +1126,12 @@ function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn, isDarkMode }: { o
                 "w-full px-4 py-3 rounded-none border focus:outline-none focus:border-editorial-accent text-sm transition-colors",
                 isDarkMode ? "bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-editorial-text"
               )}
-              placeholder="naam@voorbeeld.nl"
+              placeholder={t('auth.emailPlaceholder')}
             />
           </div>
           
           <div className="space-y-1">
-            <label className={cn("text-[10px] font-bold uppercase tracking-widest italic px-1", isDarkMode ? "text-zinc-700" : "text-black/40")}>Wachtwoord</label>
+            <label className={cn("text-[10px] font-bold uppercase tracking-widest italic px-1", isDarkMode ? "text-zinc-700" : "text-black/40")}>{t('auth.password')}</label>
             <input 
               required
               type="password" 
@@ -1111,7 +1164,7 @@ function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn, isDarkMode }: { o
             )}
           >
             {isLoggingIn && <div className={cn("w-4 h-4 border-2 rounded-full animate-spin", isDarkMode ? "border-zinc-900/30 border-t-zinc-900" : "border-white/30 border-t-white")}></div>}
-            {isLoggingIn ? "Bezig..." : (isSignUp ? "Registreren" : "Inloggen")}
+            {isLoggingIn ? t('auth.loggingIn') : (isSignUp ? t('auth.signup') : t('auth.login'))}
           </button>
         </form>
 
@@ -1123,7 +1176,7 @@ function LoginView({ onAuth, onGoogleAuth, error, isLoggingIn, isDarkMode }: { o
             }}
             className={cn("text-[10px] font-bold uppercase tracking-widest hover:underline italic", isDarkMode ? "text-editorial-accent" : "text-editorial-accent")}
           >
-            {isSignUp ? "Heb je al een account? Log in" : "Nog geen account? Registreer hier"}
+            {isSignUp ? t('auth.hasAccount') : t('auth.noAccount')}
           </button>
         </div>
       </motion.div>

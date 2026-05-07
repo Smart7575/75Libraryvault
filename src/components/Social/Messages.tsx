@@ -17,8 +17,9 @@ import { UserProfile, userService } from '../../services/userService';
 import { bookService } from '../../services/bookService';
 import { auth } from '../../lib/firebase';
 import { format } from 'date-fns';
-import { nl } from 'date-fns/locale';
+import { nl, enUS } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
+import { useLanguage } from '../../lib/LanguageContext';
 
 interface MessagesProps {
   initialChatUser?: UserProfile;
@@ -27,6 +28,7 @@ interface MessagesProps {
 }
 
 export default function Messages({ initialChatUser, onBack, isDarkMode }: MessagesProps) {
+  const { t, language } = useLanguage();
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(initialChatUser || null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -90,7 +92,7 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
           "p-6 border-b flex items-center justify-between",
           isDarkMode ? "border-zinc-800 bg-zinc-900" : "border-editorial-border bg-white"
         )}>
-           <h2 className="text-xl font-serif italic font-black">Berichten</h2>
+           <h2 className="text-xl font-serif italic font-black">{t('social.messages') || 'Berichten'}</h2>
            <button onClick={onBack} className={cn("p-2 transition-colors", isDarkMode ? "hover:text-editorial-accent-bright" : "hover:text-editorial-accent")}><ChevronLeft size={20} /></button>
         </div>
         
@@ -99,7 +101,7 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
              <Search size={14} className={cn("absolute left-3 top-1/2 -translate-y-1/2", isDarkMode ? "text-white/30" : "text-black/20")} />
              <input 
                type="text" 
-               placeholder="Zoek contacten..." 
+               placeholder={t('social.searchContacts') || "Zoek contacten..."} 
                className={cn(
                 "w-full border pl-10 pr-4 py-2 text-xs focus:outline-none focus:border-editorial-accent transition-all",
                 isDarkMode ? "bg-zinc-950 border-zinc-800 text-white placeholder:text-white/30" : "bg-white border-editorial-border text-editorial-text"
@@ -110,7 +112,7 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
 
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className={cn("p-10 text-center animate-pulse italic font-serif", isDarkMode ? "text-white/40" : "opacity-30")}>Contacten laden...</div>
+            <div className={cn("p-10 text-center animate-pulse italic font-serif", isDarkMode ? "text-white/40" : "opacity-30")}>{t('social.loadingContacts') || 'Contacten laden...'}</div>
           ) : (
             contactList.map((user) => (
               <div 
@@ -133,7 +135,7 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
                     <p className={cn("font-bold text-xs truncate truncate-text tracking-wide", isDarkMode ? "text-white" : "text-editorial-text")}>{user.displayName}</p>
                     <span className={cn("text-[8px] font-bold uppercase", isDarkMode ? "text-white/40" : "text-black/30")}>12:30</span>
                   </div>
-                  <p className={cn("text-[10px] font-serif italic truncate", isDarkMode ? "text-white/40" : "text-black/40")}>Laatste getypte bericht...</p>
+                  <p className={cn("text-[10px] font-serif italic truncate", isDarkMode ? "text-white/40" : "text-black/40")}>{t('social.lastMessageSample') || 'Laatste getypte bericht...'}</p>
                 </div>
               </div>
             ))
@@ -164,7 +166,7 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
                   <div>
                     <h3 className="font-serif italic font-black text-lg leading-none mb-1">{selectedUser.displayName}</h3>
                     <p className={cn("text-[9px] font-bold uppercase tracking-widest flex items-center gap-1", isDarkMode ? "text-editorial-accent-bright" : "text-green-600")}>
-                      <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isDarkMode ? "bg-editorial-accent-bright" : "bg-green-600")}></span> Online
+                      <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isDarkMode ? "bg-editorial-accent-bright" : "bg-green-600")}></span> {t('social.onlineStatus') || 'Online'}
                     </p>
                   </div>
                </div>
@@ -186,8 +188,8 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center opacity-10 text-center p-20 grayscale">
                     <MessageSquare size={64} className="mb-4" />
-                    <p className="font-serif italic text-xl">Deel je passie voor boeken.</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest mt-2">Geen berichten in dit gesprek</p>
+                    <p className="font-serif italic text-xl">{t('social.sharePassion') || 'Deel je passie voor boeken.'}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mt-2">{t('social.noMessages') || 'Geen berichten in dit gesprek'}</p>
                 </div>
               ) : (
                 messages.map((m) => {
@@ -204,12 +206,13 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
                     >
                       {userService.isAdmin(auth.currentUser?.email) && (
                          <button 
-                           onClick={() => m.id && window.confirm('Bericht verwijderen?') && socialService.deleteMessage(m.id)}
+                           onClick={() => m.id && window.confirm(t('social.confirmDeleteMessage') || 'Bericht verwijderen?') && socialService.deleteMessage(m.id)}
                            className={cn(
                              "mb-1 p-1 transition-colors",
                              isDarkMode ? "text-zinc-800 hover:text-red-500" : "text-black/10 hover:text-red-500",
                              isOwn ? "mr-1" : "ml-1"
                            )}
+                           title={t('social.deleteMessage') || "Bericht verwijderen"}
                          >
                            <Trash2 size={10} />
                          </button>
@@ -235,7 +238,7 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
                                  <div className="w-16 h-20 bg-black/5 flex items-center justify-center italic text-lg font-serif">?</div>
                                )}
                                <div className="flex-1 min-w-0">
-                                  <p className={cn("text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1", isDarkMode ? "text-white" : "")}>Gepusht boek</p>
+                                  <p className={cn("text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1", isDarkMode ? "text-white" : "")}>{t('social.pushedBook') || 'Gepusht boek'}</p>
                                   <p className="font-serif italic font-black text-sm leading-tight line-clamp-2 mb-1">{m.bookTitle}</p>
                                   <p className="text-[10px] italic opacity-60">{m.bookDataSnippet.authors?.join(', ')}</p>
                                </div>
@@ -255,7 +258,7 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
                                   )}
                                 >
                                   <ExternalLink size={12} />
-                                  Kijk Locatie
+                                  {t('social.viewLocation') || 'Kijk Locatie'}
                                 </a>
                               )}
                               
@@ -283,12 +286,12 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
                                   {acceptedMessages[m.id || ''] ? (
                                     <>
                                       <Check size={12} />
-                                      Toegevoegd
+                                      {t('social.accepted') || 'Toegevoegd'}
                                     </>
                                   ) : (
                                     <>
                                       <Check size={12} />
-                                      Accepteren
+                                      {t('social.acceptBook') || 'Accepteren'}
                                     </>
                                   )}
                                 </button>
@@ -303,7 +306,7 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
                               ? (isDarkMode ? "bg-zinc-900/5 border-zinc-900/10" : "bg-white/10 border-white/20") 
                               : (isDarkMode ? "bg-zinc-950/50 border-zinc-900" : "bg-neutral-50 border-editorial-border")
                           )}>
-                            <p className={cn("text-[10px] font-bold uppercase tracking-widest opacity-60", isDarkMode ? "text-white" : "")}>Gedeelde opslaglocatie</p>
+                            <p className={cn("text-[10px] font-bold uppercase tracking-widest opacity-60", isDarkMode ? "text-white" : "")}>{t('social.sharedBook') || 'Gedeelde opslaglocatie'}</p>
                             <p className="font-serif italic font-bold">{m.bookTitle}</p>
                             <a 
                               href={m.storageUrl}
@@ -317,14 +320,14 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
                               )}
                             >
                               <ExternalLink size={12} />
-                              Open Locatie
+                              {t('social.openLocation') || 'Open Locatie'}
                             </a>
                           </div>
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-2 px-1">
                         <span className={cn("text-[8px] font-bold uppercase tracking-widest italic", isDarkMode ? "text-white/40" : "opacity-30")}>
-                          {m.createdAt ? format(m.createdAt.toDate(), 'HH:mm', { locale: nl }) : '...'}
+                          {m.createdAt ? format(m.createdAt.toDate(), 'HH:mm', { locale: language === 'nl' ? nl : enUS }) : '...'}
                         </span>
                         {isOwn && <Check size={10} className={cn("opacity-50", isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent")} />}
                       </div>
@@ -340,7 +343,7 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
                 type="text" 
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Typ een bericht..."
+                placeholder={t('social.typeMessage') || "Typ een bericht..."}
                 className={cn(
                   "flex-1 border px-6 py-4 rounded-none text-sm focus:outline-none focus:placeholder-transparent focus:border-editorial-accent transition-all shadow-inner",
                   isDarkMode ? "bg-zinc-950 border-zinc-800 text-white" : "bg-white border-editorial-border"
@@ -361,9 +364,9 @@ export default function Messages({ initialChatUser, onBack, isDarkMode }: Messag
         ) : (
           <div className={cn("flex-1 flex flex-col items-center justify-center p-20 text-center transition-colors", isDarkMode ? "bg-zinc-900 text-white/40" : "opacity-30 text-editorial-text")}>
              <MessageSquare size={80} className={cn("mb-6", isDarkMode ? "text-editorial-accent-bright" : "text-editorial-accent")} />
-             <h2 className="text-3xl font-serif italic mb-4">Mijn Berichten</h2>
+             <h2 className="text-3xl font-serif italic mb-4">{t('social.selectReader') || 'Mijn Berichten'}</h2>
              <p className="max-w-md font-serif italic text-lg leading-relaxed">
-               Selecteer een lezer uit de lijst aan de linkerkant om een gesprek te starten of te hervatten.
+               {t('social.selectReaderDesc') || 'Selecteer een lezer uit de lijst aan de linkerkant om een gesprek te starten of te hervatten.'}
              </p>
           </div>
         )}
