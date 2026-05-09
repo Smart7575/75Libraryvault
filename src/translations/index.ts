@@ -137,6 +137,7 @@ export const translations = {
       saving: 'Saving...',
       saveChanges: 'Save Changes',
       editBook: 'Edit Book',
+      summary: 'Summary',
       notes: 'Notes',
       notesPlaceholder: 'Write your thoughts about this book here...',
       readingStatusOptions: {
@@ -444,6 +445,7 @@ export const translations = {
       saving: 'Bezig...',
       saveChanges: 'Wijzigingen Opslaan',
       editBook: 'Boek Bewerken',
+      summary: 'Samenvatting',
       notes: 'Notities',
       notesPlaceholder: 'Schrijf hier je gedachten over dit boek...',
       readingStatusOptions: {

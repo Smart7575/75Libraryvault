@@ -46,13 +46,16 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
     cleanData.genre = genresInput.split(',').map(s => s.trim()).filter(Boolean);
 
     // Ensure numbers are numbers or removed
-    if (cleanData.seriesIndex !== undefined) {
-      const idx = parseInt(cleanData.seriesIndex as any);
-      if (isNaN(idx)) {
-        delete cleanData.seriesIndex;
-      } else {
-        cleanData.seriesIndex = idx;
-      }
+    if (cleanData.seriesIndex === undefined || isNaN(parseInt(cleanData.seriesIndex as any))) {
+      delete cleanData.seriesIndex;
+    } else {
+      cleanData.seriesIndex = parseInt(cleanData.seriesIndex as any);
+    }
+
+    if (cleanData.pageCount === undefined || isNaN(parseInt(cleanData.pageCount as any))) {
+      delete cleanData.pageCount;
+    } else {
+      cleanData.pageCount = parseInt(cleanData.pageCount as any);
     }
 
     if (!cleanData.series) cleanData.series = '';
@@ -307,6 +310,19 @@ export default function EditBookModal({ book, isOpen, onClose, onBookUpdated, is
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className={cn("space-y-6 pt-8 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>
+              <label className={cn("text-[9px] font-bold uppercase tracking-[0.15em] px-1 italic", isDarkMode ? "text-zinc-800" : "text-editorial-text/40")}>{t('library.summary') || 'Samenvatting'}</label>
+              <textarea 
+                value={formData.summary || ''}
+                onChange={(e) => setFormData({...formData, summary: e.target.value})}
+                className={cn(
+                  "w-full px-4 py-3 rounded-none border text-sm focus:outline-none focus:border-editorial-accent min-h-[100px] font-serif italic transition-colors",
+                  isDarkMode ? "bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-800" : "bg-white border-editorial-border text-black"
+                )}
+                placeholder={language === 'nl' ? 'Korte samenvatting van het boek...' : 'Short summary of the book...'}
+              />
             </div>
 
             <div className={cn("space-y-6 pt-8 border-t", isDarkMode ? "border-zinc-800" : "border-editorial-border")}>

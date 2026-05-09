@@ -16,6 +16,7 @@
         "publishedDate": { "type": "string", "description": "Publication date string." },
         "description": { "type": "string", "description": "Book summary/description." },
         "coverUrl": { "type": "string", "description": "URL to the cover image." },
+        "summary": { "type": "string", "description": "Short summary of the book." },
         "format": { "type": "string", "description": "File format (epub, pdf, etc.)" },
         "storageUrl": { "type": "string", "description": "Link to the file storage (OneDrive, NAS, etc.)" },
         "rating": { "type": "number", "description": "User rating (1-5)." },

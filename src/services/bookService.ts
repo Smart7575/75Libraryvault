@@ -41,11 +41,22 @@ export interface Book {
   pageCount?: number;
   readingDuration?: number;
   pagesPerDay?: number;
+  summary?: string;
   notes?: string;
   updatedAt?: any;
 }
 
 const COLLECTION_NAME = 'books';
+
+function sanitizeData(data: any) {
+  const result = { ...data };
+  Object.keys(result).forEach(key => {
+    if (result[key] === undefined) {
+      delete result[key];
+    }
+  });
+  return result;
+}
 
 export const bookService = {
   async getAllBooks() {
@@ -86,12 +97,12 @@ export const bookService = {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      const newBook = {
+      const newBook = sanitizeData({
         ...book,
         userId: user.uid,
         dateAdded: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      };
+      });
       const docRef = await addDoc(collection(db, COLLECTION_NAME), newBook);
       return docRef.id;
     } catch (error) {
@@ -102,10 +113,11 @@ export const bookService = {
   async updateBook(id: string, updates: Partial<Book>) {
     try {
       const docRef = doc(db, COLLECTION_NAME, id);
-      await updateDoc(docRef, {
+      const sanitizedUpdates = sanitizeData({
         ...updates,
         updatedAt: serverTimestamp(),
       });
+      await updateDoc(docRef, sanitizedUpdates);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `${COLLECTION_NAME}/${id}`);
     }
@@ -122,17 +134,16 @@ export const bookService = {
 
   async getPopularBooks() {
     try {
-      // Fetch books that are currently being read by anyone
+      // Group by title and count
       const q = query(
         collection(db, COLLECTION_NAME),
         where('readingStatus', '==', 'Bezig'),
-        limit(100) // Look at a sample of current reading activities
+        limit(100)
       );
       
       const snapshot = await getDocs(q);
       const books = snapshot.docs.map(doc => doc.data() as Book);
       
-      // Group by title and count
       const counts: { [key: string]: { title: string, count: number, authors: string[] } } = {};
       
       books.forEach(book => {
@@ -148,7 +159,6 @@ export const bookService = {
         }
       });
       
-      // Convert to array and sort
       return Object.values(counts)
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
@@ -163,7 +173,6 @@ export const bookService = {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      // Create a copy of the book object excluding personal/private data
       const { 
         id, 
         userId, 
@@ -172,7 +181,7 @@ export const bookService = {
         rating, 
         storageUrl, 
         notes, 
-        readingStatus, // We might want to reset this
+        readingStatus, 
         dateRead,
         startDate,
         endDate,
@@ -181,13 +190,13 @@ export const bookService = {
         ...bookData 
       } = book;
 
-      const newBook = {
+      const newBook = sanitizeData({
         ...bookData,
         userId: user.uid,
-        readingStatus: 'Wil ik lezen' as const, // Default status for copied books
+        readingStatus: 'Wil ik lezen' as const,
         dateAdded: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      };
+      });
 
       const docRef = await addDoc(collection(db, COLLECTION_NAME), newBook);
       return docRef.id;
@@ -201,17 +210,16 @@ export const bookService = {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      // Ensure storageUrl is preserved if it exists in the snippet or passed separately
       const effectiveStorageUrl = sharedStorageUrl || bookSnippet?.storageUrl || '';
       
-      const newBook = {
+      const newBook = sanitizeData({
         ...bookSnippet,
         userId: user.uid,
         storageUrl: effectiveStorageUrl,
         readingStatus: 'Wil ik lezen' as const,
         dateAdded: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      };
+      });
 
       const docRef = await addDoc(collection(db, COLLECTION_NAME), newBook);
       return docRef.id;

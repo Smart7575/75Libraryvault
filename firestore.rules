@@ -60,6 +60,7 @@ service cloud.firestore {
              && (data.get('readingStatus', 'Ongelezen') in ['Ongelezen', 'Bezig', 'Gelezen', 'Wil ik lezen'])
              && (!data.keys().hasAny(['rating']) || (data.rating is number && data.rating >= 0 && data.rating <= 5))
              && (!data.keys().hasAny(['pageCount']) || (data.pageCount is number))
+             && (!data.keys().hasAny(['summary']) || (data.summary is string && data.summary.size() <= 4096))
              && (!data.keys().hasAny(['pagesPerDay']) || (data.pagesPerDay is number));
     }
 
@@ -135,7 +136,7 @@ service cloud.firestore {
                    && (incoming().diff(existing()).affectedKeys().hasOnly([
                        'title', 'authors', 'series', 'seriesIndex', 'isbn', 'language', 
                        'genre', 'publishedDate', 'description', 'coverUrl', 'format', 
-                       'storageUrl', 'rating', 'readingStatus', 'dateRead', 'notes', 
+                       'storageUrl', 'rating', 'readingStatus', 'dateRead', 'notes', 'summary',
                        'pageCount', 'startDate', 'endDate', 'readingDuration', 'pagesPerDay',
                        'updatedAt'
                      ]));

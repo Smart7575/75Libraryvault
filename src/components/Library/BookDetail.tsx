@@ -391,6 +391,20 @@ export default function BookDetail({ book, onClose, onUpdate, isDarkMode }: Book
             </div>
           </div>
 
+          {book.summary && (
+            <div className="space-y-4 mb-12">
+               <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] italic", isDarkMode ? "text-zinc-500" : "text-editorial-text/40")}>
+                 {t('library.summary') || 'Samenvatting'}
+               </label>
+               <div className={cn(
+                 "p-10 border leading-relaxed font-serif italic text-lg transition-colors border-dashed",
+                 isDarkMode ? "bg-zinc-950/20 border-zinc-800 text-zinc-300" : "bg-neutral-50/50 border-editorial-border text-editorial-text/80"
+               )}>
+                 {book.summary}
+               </div>
+            </div>
+          )}
+
           <div className="space-y-4 flex-1">
              <label className={cn("text-[9px] font-bold uppercase tracking-[0.2em] italic", isDarkMode ? "text-zinc-500" : "text-editorial-text/40")}>
                {isOwner ? (t('library.personalNotes') || 'Persoonlijke Annotaties') : (t('library.description') || `Beschrijving`)}
